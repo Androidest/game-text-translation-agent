@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from typing import List
 
 class Extraction(BaseModel):
-    terms: List[List[str]] = Field(description="每一行的术语列表")
+    terms: List[List[str]] = Field(description="每一条文本的术语列表")
 
 def create_term_extractor_agent(model:LanguageModelLike, max_retry_count=3):
     llm_structured = model.with_structured_output(
@@ -26,43 +26,61 @@ def create_term_extractor_agent(model:LanguageModelLike, max_retry_count=3):
         
         input_text = json.dumps(state["input_list"], indent=1, ensure_ascii=False)
 
-        # First try of extraction
-        if not state.get("error"):
-            messages =  [
-                SystemMessage(content=TERM_EXTRACTOR_INSTRUCTION),
-                HumanMessage(content=input_text),
-            ]
-            response = llm_structured.invoke(messages)
-            # record the extraction
-            messages.append(
-                AIMessage(content=terms_array_to_json(response.terms))
-            )
-            retry_count = 0
+        try:
+            # First try of extraction
+            if not state.get("error"):
+                messages =  [
+                    SystemMessage(content=TERM_EXTRACTOR_INSTRUCTION),
+                    HumanMessage(content=input_text),
+                ]
+                response = llm_structured.invoke(messages)
+                # record the extraction
+                messages.append(
+                    AIMessage(content=terms_array_to_json(response.terms))
+                )
+                retry_count = 0
 
-        # if error, try to fix it
-        else:
-            messages = [
-                *state["messages"],
-                HumanMessage(content=FIX_EXTRACTION_INSTRUCTION.format(error=state["error"])),
-            ]
-            response = llm_structured.invoke(messages)
-            # drop the last extraction and error message, and replace them with the extraction
-            messages = messages = [
-                *state["messages"][:-1],
-                AIMessage(content=terms_array_to_json(response.terms)),
-            ]
+            # if error, try to fix it
+            else:
+                messages = [
+                    *state["messages"],
+                    HumanMessage(content=FIX_EXTRACTION_INSTRUCTION.format(error=state["error"])),
+                ]
+                response = llm_structured.invoke(messages)
+                # drop the last extraction and error message, and replace them with the extraction
+                messages = messages = [
+                    *state["messages"][:-1],
+                    AIMessage(content=terms_array_to_json(response.terms)),
+                ]
+                retry_count = state["retry_count"] + 1
+
+        except Exception as e:
             retry_count = state["retry_count"] + 1
+
+            return TermExtractionState(
+                messages = messages,
+                last_response = None,
+                retry_count = retry_count,
+                error = str(e), # JSON parse error
+            )
 
         return TermExtractionState(
             messages = messages,
             last_response = response.terms,
             retry_count = retry_count,
+            error=None,
         )
 
     def validate_node(state: TermExtractionState):
+
+        if state.get("error") and not state.get("last_response"):
+            return TermExtractionState(
+                error = state["error"], # JSON parse error
+            )
+        
         input_list = state["input_list"]
         output_list = state["last_response"]
-        
+
         # check output length
         if len(output_list) != len(input_list):
             return TermExtractionState(
