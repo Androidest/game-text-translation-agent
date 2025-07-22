@@ -9,6 +9,16 @@ from tqdm import tqdm
 import json
 from langchain.callbacks import get_openai_callback
 from agent import deepseek, create_term_extractor_agent, TermExtractionState, terms_array_to_json
+import re
+
+def is_valid_text(text):
+    # Define the regex pattern for Unicode ranges of Korean and Japanese:
+    # Korean: U+AC00-U+D7AF
+    # Japanese Hiragana: U+3040-U+309F
+    # Japanese Katakana: U+30A0-U+30FF
+    pattern = re.compile(r'[\uAC00-\uD7AF\u3040-\u309F\u30A0-\u30FF]')
+    # the text is invalid if it contains Korean or Japanese characters
+    return not bool(pattern.search(text))
 
 if __name__ == "__main__":
     agent = create_term_extractor_agent(
@@ -39,12 +49,15 @@ if __name__ == "__main__":
         for j in range(min(batch_size, end-i)):
             cn = data_sheet[i+j, "CN"]
             es = data_sheet[i+j, "ES"]
-            if isinstance(cn, str):
+            if isinstance(cn, str) and is_valid_text(cn):
                 batch_str_len += len(cn)
                 input_list.append(cn)
                 es_list.append(es)
         
         print("batch_str_len:", batch_str_len)
+        # skip if the batch is empty
+        if batch_str_len == 0:
+            continue
 
         # extract terms, show the extraction process
         with get_openai_callback() as cb:
@@ -82,4 +95,4 @@ if __name__ == "__main__":
         print("Total output tokens so far:", total_output_tokens)
         print("Total retry count so far:", total_retry_count)
         print(f"====== Batch {i} - {i+batch_size} done ======")
-        time.sleep(0.3)
+        time.sleep(0.2)
