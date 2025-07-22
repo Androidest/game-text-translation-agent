@@ -39,6 +39,9 @@ class Sheet:
     def __setitem__(self, indices, value):
         self.dataframe.loc[indices] = value
 
+    def append(self, value):
+        self[len(self)] = value
+
     def column_names(self):
         return self.dataframe.columns
     

@@ -9,16 +9,6 @@ from tqdm import tqdm
 import json
 from langchain.callbacks import get_openai_callback
 from agent import deepseek, create_term_extractor_agent, TermExtractionState, terms_array_to_json
-import re
-
-def is_valid_text(text):
-    # Define the regex pattern for Unicode ranges of Korean and Japanese:
-    # Korean: U+AC00-U+D7AF
-    # Japanese Hiragana: U+3040-U+309F
-    # Japanese Katakana: U+30A0-U+30FF
-    pattern = re.compile(r'[\uAC00-\uD7AF\u3040-\u309F\u30A0-\u30FF]')
-    # the text is invalid if it contains Korean or Japanese characters
-    return not bool(pattern.search(text))
 
 if __name__ == "__main__":
     agent = create_term_extractor_agent(
@@ -26,7 +16,7 @@ if __name__ == "__main__":
         max_retry_count=5
     )
     data_sheet = Sheet(
-        excel_file_path="../data/game_lang_dataset.xlsx"
+        excel_file_path="../data/game_lang_dataset_cleaned.xlsx"
     )
     terms_sheet = Sheet(
         excel_file_path="../data/terms_extractor_dataset.xlsx",
@@ -37,6 +27,7 @@ if __name__ == "__main__":
     start = len(terms_sheet)
     end = len(data_sheet)
     batch_size = 10
+    total_cached_tokens = 0
     total_input_tokens = 0
     total_output_tokens = 0
     total_retry_count = 0
@@ -49,15 +40,10 @@ if __name__ == "__main__":
         for j in range(min(batch_size, end-i)):
             cn = data_sheet[i+j, "CN"]
             es = data_sheet[i+j, "ES"]
-            if isinstance(cn, str) and is_valid_text(cn):
-                batch_str_len += len(cn)
-                input_list.append(cn)
-                es_list.append(es)
-        
+            input_list.append(cn)
+            es_list.append(es)
+            batch_str_len += len(cn)
         print("batch_str_len:", batch_str_len)
-        # skip if the batch is empty
-        if batch_str_len == 0:
-            continue
 
         # extract terms, show the extraction process
         with get_openai_callback() as cb:
@@ -70,6 +56,7 @@ if __name__ == "__main__":
             print("Cached tokens", cb.prompt_tokens_cached)
             print("Input tokens", cb.prompt_tokens)
             print("Output tokens", cb.completion_tokens) 
+            total_cached_tokens += cb.prompt_tokens_cached
             total_input_tokens += cb.prompt_tokens
             total_output_tokens += cb.completion_tokens
             total_retry_count += state["retry_count"]
@@ -91,6 +78,7 @@ if __name__ == "__main__":
         
         print("Saving Term Sheet...")
         terms_sheet.save()
+        print("Total cached tokens so far:", total_cached_tokens)
         print("Total input tokens so far:", total_input_tokens)
         print("Total output tokens so far:", total_output_tokens)
         print("Total retry count so far:", total_retry_count)
