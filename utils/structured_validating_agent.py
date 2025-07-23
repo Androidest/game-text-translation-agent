@@ -53,7 +53,7 @@ def create_structured_validating_agent(
                 ]
                 output = llm_structured.invoke(messages)
                 # record the history
-                messages.append(output)
+                messages.append(output["raw"])
                 attempts = 0
 
             # retry llm call to fix error
@@ -66,7 +66,7 @@ def create_structured_validating_agent(
                 # replace the last output and error message with the new output.
                 messages = messages = [
                     *state["messages"][:-1],
-                    output,
+                    output["raw"],
                 ]
                 attempts = state.get("attempts", 0) + 1
 

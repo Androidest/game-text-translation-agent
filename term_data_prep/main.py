@@ -51,10 +51,14 @@ if __name__ == "__main__":
                 input_obj=input_list,
                 input_text=json.dumps(input_list, ensure_ascii=False),
             )
+            print("Input text:", json.dumps(input_list, indent=4, ensure_ascii=False))
             for step in agent.stream(state):
                 node, state_update = next(iter(step.items()))
-                print(f"Node: [{node}] State:", state_update)
                 state.update(state_update)
+                if node == "generate_node":
+                    print(f"Node: [{node}] output: {state_update.get("output_text")}, error:{state_update.get("error")}")
+                if node == "validate_node":
+                    print(f"Node: [{node}] attempt: {state_update.get('attempts', 0)}, error:{state_update.get("error")}")
             
             print("Cached tokens", cb.prompt_tokens_cached)
             print("Input tokens", cb.prompt_tokens)
@@ -79,8 +83,9 @@ if __name__ == "__main__":
             terms = output_list[j]
             terms_sheet[i+j] = { "CN": cn, "TERMS": f"{terms}", "ES": es }
         
-        print("Saving Term Sheet...")
-        terms_sheet.save()
+        if i % 3 == 0:
+            print("Saving Term Sheet...")
+            terms_sheet.save()
         print("Total cached tokens so far:", total_cached_tokens)
         print("Total input tokens so far:", total_input_tokens)
         print("Total output tokens so far:", total_output_tokens)
