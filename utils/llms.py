@@ -5,12 +5,6 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from pydantic import BaseModel, Field
-from typing import List
-
-class Extraction(BaseModel):
-    terms: List[str] = Field(None, description="extracted terminologies")
-
 deepseek = ChatOpenAI(
     model='deepseek-chat',
     base_url=os.getenv('MODEL_URL'),

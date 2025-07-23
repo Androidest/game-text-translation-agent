@@ -8,12 +8,12 @@ import time
 from tqdm import tqdm
 import json
 from langchain.callbacks import get_openai_callback
-from agent import deepseek, create_term_extractor_agent, TermExtractionState, terms_array_to_json
+from agent import *
 
 if __name__ == "__main__":
-    agent = create_term_extractor_agent(
+    agent = create_term_extraction_agent(
         model=deepseek, 
-        max_retry_count=5
+        max_attempts=5
     )
     data_sheet = Sheet(
         excel_file_path="../data/game_lang_dataset_cleaned.xlsx"
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     total_cached_tokens = 0
     total_input_tokens = 0
     total_output_tokens = 0
-    total_retry_count = 0
+    total_attempts = 0
     for i in tqdm(range(start, end, batch_size), desc=f"Extracting terms from {start} to {end}"):
         print(f"====== Batch {i} - {i+batch_size} starts ======")
         # prepare input_list
@@ -47,7 +47,10 @@ if __name__ == "__main__":
 
         # extract terms, show the extraction process
         with get_openai_callback() as cb:
-            state = TermExtractionState(input_list=input_list)
+            state = StructuredValidatingState(
+                input_obj=input_list,
+                input_text=json.dumps(input_list, ensure_ascii=False),
+            )
             for step in agent.stream(state):
                 node, state_update = next(iter(step.items()))
                 print(f"Node: [{node}] State:", state_update)
@@ -59,17 +62,17 @@ if __name__ == "__main__":
             total_cached_tokens += cb.prompt_tokens_cached
             total_input_tokens += cb.prompt_tokens
             total_output_tokens += cb.completion_tokens
-            total_retry_count += state["retry_count"]
+            total_attempts += state["attempts"]
         
         # validate the extraction
-        if not state.get("output_list"):
+        if not state.get("output_obj"):
             print(f"Unable to extract terms from line ({i} - {i+batch_size})", end="\n")
-            print("Input list:\n", json.dumps(input_list, indent=4, ensure_ascii=False), end="\n")
-            print("Wrong output list:\n", terms_array_to_json(state["last_response"]), end="\n")
+            print("Input list:\n", state["input_text"])
+            print("Wrong output list:\n", state["output_text"])
             break
 
         # save to terms_sheet
-        output_list = state["output_list"]
+        output_list = state["output_obj"].terms
         for j in range(len(input_list)):
             cn = input_list[j]
             es = es_list[j]
@@ -81,6 +84,6 @@ if __name__ == "__main__":
         print("Total cached tokens so far:", total_cached_tokens)
         print("Total input tokens so far:", total_input_tokens)
         print("Total output tokens so far:", total_output_tokens)
-        print("Total retry count so far:", total_retry_count)
+        print("Total attempts so far:", total_attempts)
         print(f"====== Batch {i} - {i+batch_size} done ======")
-        time.sleep(0.2)
+        # time.sleep(0.1)
