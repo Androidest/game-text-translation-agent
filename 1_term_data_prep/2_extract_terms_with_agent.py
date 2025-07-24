@@ -81,7 +81,7 @@ if __name__ == "__main__":
         for j in range(len(input_list)):
             cn = input_list[j]
             es = es_list[j]
-            terms = output_list[j]
+            terms = json.dumps(output_list[j], ensure_ascii=False)
             terms_sheet[i+j] = { "CN": cn, "TERMS": f"{terms}", "ES": es }
         
         print("Saving Term Sheet...")
