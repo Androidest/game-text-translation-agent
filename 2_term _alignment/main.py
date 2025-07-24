@@ -2,35 +2,96 @@
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
-os.environ["HTTP_PROXY"] = "http://localhost:1081"
-os.environ["HTTPS_PROXY"] = "http://localhost:1081"
 
 from utils import *
+import asyncio
 import time
 from tqdm import tqdm
 import json
+from langchain.callbacks import get_openai_callback
+from agent import *
 
-import torch
-import numpy as np
-from transformers import AutoTokenizer, AutoModel, XLMTokenizer
-from scipy.spatial.distance import cdist
+INPUT_PATH = "../data/term_extraction.final.xlsx"
+OUTPUT_PATH = "../data/term_aligment.xlsx"
 
-# Load XLM-Align
-# model_name = "microsoft/xlm-align-base"
-# tokenizer = AutoTokenizer.from_pretrained(model_name)
-# model = AutoModel.from_pretrained(model_name)
-# model.eval()
+if __name__ == "__main__":
+    agent = create_term_aligment_agent(
+        model=deepseek, 
+        max_attempts=5
+    )
+    input_sheet = Sheet(
+        excel_file_path=INPUT_PATH
+    )
+    output_sheet = Sheet(
+        excel_file_path=OUTPUT_PATH,
+        default_data={"CN": [], "ES":[], "TERMS": [], "TERMS_ES":[] },
+        clear=False
+    )
 
-from simalign import SentenceAligner
+    start = len(output_sheet)
+    end = len(input_sheet)
+    batch_size = 10
+    total_cached_tokens = 0
+    total_input_tokens = 0
+    total_output_tokens = 0
+    total_attempts = 0
+    for i in tqdm(range(start, end, batch_size), desc=f"Aligning terms from {start} to {end}"):
+        print(f"====== Batch {i} - {i+batch_size} starts ======")
+        # prepare input_list
+        input_list = []
+        for j in range(min(batch_size, end-i)):
+            cn = input_sheet[i+j, "CN"]
+            es = input_sheet[i+j, "ES"]
+            terms = input_sheet[i+j, "TERMS"]
+            input_list.append(cn)
 
-myaligner = SentenceAligner(model="bert", token_type="bpe", matching_methods="mai")
+        input_text=json.dumps(input_list, ensure_ascii=False)
+        print("batch_str_len:", len(input_text))
 
-src_sentence = ["#585", "天梯门票", "不足","是否","消耗", "{0}", "购买", "Lv", "2", "门票"]
-trg_sentence = ["Ticket", "de", "Escalón", "#585", "insuficiente", "¿", "Deseas", "consumir", "{0}", "para", "comprar", "Nv.", "2", "ticket"]
-alignments = myaligner.get_word_aligns(src_sentence, trg_sentence)
+        # align terms
+        with get_openai_callback() as cb:
+            state = StructuredValidatingState(
+                input_obj=input_list,
+                input_text=input_text,
+            )
+            print("Input text:", json.dumps(input_list, indent=4, ensure_ascii=False))
+            for step in agent.stream(state):
+                node, state_update = next(iter(step.items()))
+                state.update(state_update)
+                if node == "generate_node":
+                    print(f"Node: [{node}] output: {state_update.get("output_text")}, error:{state_update.get("error")}")
+                if node == "validate_node":
+                    print(f"Node: [{node}] attempt: {state_update.get('attempts', 0)}, error:{state_update.get("error")}")
+            
+            print("Cached tokens", cb.prompt_tokens_cached)
+            print("Input tokens", cb.prompt_tokens)
+            print("Output tokens", cb.completion_tokens) 
+            total_cached_tokens += cb.prompt_tokens_cached
+            total_input_tokens += cb.prompt_tokens
+            total_output_tokens += cb.completion_tokens
+            total_attempts += state["attempts"]
+        
+        # validate the extraction
+        if not state.get("output_obj"):
+            print(f"Unable to align terms from line ({i} - {i+batch_size})", end="\n")
+            print("Input list:\n", state["input_text"])
+            print("Wrong output list:\n", state["output_text"])
+            break
 
-for matching_method in alignments:
-    print(matching_method, ":", alignments[matching_method])
-
-for (i, j) in alignments["itermax"]:
-    print(src_sentence[i], trg_sentence[j])
+        # save to terms_sheet
+        output_list = state["output_obj"].terms
+        for j in range(len(input_list)):
+            cn = input_sheet[i+j, "CN"]
+            es = input_sheet[i+j, "ES"]
+            terms = input_sheet[i+j, "TERMS"]
+            terms_es = json.dumps(output_list[j], ensure_ascii=False)
+            output_sheet[i+j] = { "CN": cn, "ES": es, "TERMS": terms, "TERMS_ES": terms_es }
+        
+        # logs
+        print("Saving Alignment Sheet...")
+        output_sheet.save()
+        print("Total cached tokens so far:", total_cached_tokens)
+        print("Total input tokens so far:", total_input_tokens)
+        print("Total output tokens so far:", total_output_tokens)
+        print("Total attempts so far:", total_attempts)
+        print(f"====== Batch {i} - {i+batch_size} done ======")
