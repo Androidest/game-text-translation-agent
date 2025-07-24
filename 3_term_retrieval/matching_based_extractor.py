@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 TERM_SCORE_FINAL_PATH = "../data/term_score.final.xlsx"
 TERM_TRANSLATION_FINAL_PATH = "../data/term_translation.final.xlsx"
-TERM_EXTRACTOR_DS_PATH = "../data/terms_extractor_dataset.xlsx"
+TERM_EXTRACTOR_DS_PATH = "../data/term_extraction.xlsx"
 
 class TermExtractor:
     def __init__(self, 

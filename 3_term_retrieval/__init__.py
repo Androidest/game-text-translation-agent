@@ -1,1 +1,1 @@
-from ..term_data_prep.main import *
+from .matching_based_extractor import *

@@ -9,8 +9,8 @@ import json
 from tqdm import tqdm
 
 TERM_SCORE_FINAL_PATH = "../data/term_score.final.xlsx"
-TERM_EXTRACTOR_DS_FINAL_PATH = "../data/terms_extractor_dataset.final.xlsx"
-TERM_EXTRACTOR_DS_PATH = "../data/terms_extractor_dataset.xlsx"
+TERM_EXTRACTOR_DS_FINAL_PATH = "../data/term_extraction.final.xlsx"
+TERM_EXTRACTOR_DS_PATH = "../data/term_extraction.xlsx"
 
 term_score_final = Sheet(TERM_SCORE_FINAL_PATH)
 term_ds_final = Sheet(TERM_EXTRACTOR_DS_FINAL_PATH, default_data={ "CN":[], "TERMS":[], "ES":[] }, clear=True)

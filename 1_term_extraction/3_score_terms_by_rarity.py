@@ -9,7 +9,7 @@ import jieba.analyse
 import json
 from tqdm import tqdm
 
-TERM_EXTRACTOR_DS_PATH = "../data/terms_extractor_dataset.xlsx"
+TERM_EXTRACTOR_DS_PATH = "../data/term_extraction.xlsx"
 TERM_DICT_PATH = "../data/term_dict.txt"
 TERM_IDF_ITF_PATH = "../data/term_score.xlsx"
 
@@ -33,7 +33,7 @@ print("jieba loaded the term dict")
 
 #%%
 # Calculate the IDF+ITF score for each term: score of rarity
-# ITF score: is the inverse frequency of the term in the Chinese part of the terms_extractor_dataset.xlsx document 
+# ITF score: is the inverse frequency of the term in the Chinese part of the term_extraction.xlsx document 
 # IDF score: comes from the default IDF dictionary in jieba 
 print("Counting tems frequency in the ds document...")
 tf_dict = {}

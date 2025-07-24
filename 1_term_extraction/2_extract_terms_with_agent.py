@@ -11,22 +11,25 @@ import json
 from langchain.callbacks import get_openai_callback
 from agent import *
 
+INPUT_PATH = "../data/game_lang_dataset_cleaned.xlsx"
+OUTPUT_PATH = "../data/term_extraction.xlsx"
+
 if __name__ == "__main__":
     agent = create_term_extraction_agent(
         model=deepseek, 
         max_attempts=5
     )
-    data_sheet = Sheet(
-        excel_file_path="../data/game_lang_dataset_cleaned.xlsx"
+    input_sheet = Sheet(
+        excel_file_path=INPUT_PATH
     )
-    terms_sheet = Sheet(
-        excel_file_path="../data/terms_extractor_dataset.xlsx",
+    output_sheet = Sheet(
+        excel_file_path=OUTPUT_PATH,
         default_data={"CN": [], "TERMS": [], "ES":[]},
         clear=False
     )
 
-    start = len(terms_sheet)
-    end = len(data_sheet)
+    start = len(output_sheet)
+    end = len(input_sheet)
     batch_size = 10
     total_cached_tokens = 0
     total_input_tokens = 0
@@ -36,13 +39,10 @@ if __name__ == "__main__":
         print(f"====== Batch {i} - {i+batch_size} starts ======")
         # prepare input_list
         input_list = []
-        es_list = []
         batch_str_len = 0
         for j in range(min(batch_size, end-i)):
-            cn = data_sheet[i+j, "CN"]
-            es = data_sheet[i+j, "ES"]
+            cn = input_sheet[i+j, "CN"]
             input_list.append(cn)
-            es_list.append(es)
             batch_str_len += len(cn)
         print("batch_str_len:", batch_str_len)
 
@@ -79,13 +79,13 @@ if __name__ == "__main__":
         # save to terms_sheet
         output_list = state["output_obj"].terms
         for j in range(len(input_list)):
-            cn = input_list[j]
-            es = es_list[j]
+            cn = input_sheet[i+j, "CN"]
+            es = input_sheet[i+j, "ES"]
             terms = json.dumps(output_list[j], ensure_ascii=False)
-            terms_sheet[i+j] = { "CN": cn, "TERMS": f"{terms}", "ES": es }
+            output_sheet[i+j] = { "CN": cn, "TERMS": f"{terms}", "ES": es }
         
         print("Saving Term Sheet...")
-        terms_sheet.save()
+        output_sheet.save()
         print("Total cached tokens so far:", total_cached_tokens)
         print("Total input tokens so far:", total_input_tokens)
         print("Total output tokens so far:", total_output_tokens)
