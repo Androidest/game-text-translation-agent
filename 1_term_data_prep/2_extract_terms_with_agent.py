@@ -4,6 +4,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 
 from utils import *
+import asyncio
 import time
 from tqdm import tqdm
 import json
@@ -83,9 +84,8 @@ if __name__ == "__main__":
             terms = output_list[j]
             terms_sheet[i+j] = { "CN": cn, "TERMS": f"{terms}", "ES": es }
         
-        if i % 3 == 0:
-            print("Saving Term Sheet...")
-            terms_sheet.save()
+        print("Saving Term Sheet...")
+        terms_sheet.save()
         print("Total cached tokens so far:", total_cached_tokens)
         print("Total input tokens so far:", total_input_tokens)
         print("Total output tokens so far:", total_output_tokens)

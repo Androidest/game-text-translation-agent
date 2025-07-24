@@ -128,6 +128,8 @@ def display_graph(graph:StateGraph):
 # Test
 if __name__ == "__main__":
     from llms import deepseek
+    import asyncio
+    import time
 
     class PersonInfoSchema(BaseModel):
         name:str = Field(description="The name of the person")
@@ -159,13 +161,31 @@ if __name__ == "__main__":
         max_attempts=1,
         agent_name="info_extractor_agent",
     )
-    display_graph(agent)
+    # display_graph(agent)
 
-    input_text = "My name is John and I am 30 years old."
-    state = StructuredValidatingState(
-        input_text = input_text,
-    )
-    result = agent.invoke(state)
-    print("input_text", input_text)
-    print("name", result["output_obj"].name)
-    print("age", result["output_obj"].age)
+    async def async_run(list):
+        async def async_agent(t):
+            result = await agent.ainvoke(StructuredValidatingState(input_text=t))
+            print("text", t)
+            print("name", result["output_obj"].name, "age", result["output_obj"].age)
+        
+        tasks = [ async_agent(t) for t in list]
+        return await asyncio.gather(*tasks)
+    
+    input_text = [
+        "My name is John and I am 30 years old.", 
+        "My name is Alice and I am 25 years old.",
+        "My name is Bob and I am 40 years old.",
+        "My name is Carol and I am 35 years old."
+    ]
+    
+    start = time.time()
+    [agent.invoke(StructuredValidatingState(input_text=t)) for t in input_text]
+    end = time.time()
+    print("Time cost:", end-start)
+
+    start = time.time()
+    asyncio.run(async_run(input_text))
+    end = time.time()
+    print("Time cost:", end-start)
+    
