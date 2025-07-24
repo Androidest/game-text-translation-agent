@@ -1,0 +1,14 @@
+langchain[openai]
+langgraph
+langchain-community
+jieba
+pandas 
+tqdm
+pyahocorasick
+
+transformers 
+transformers[torch]
+tensorboard
+torch
+torchvision
+torchaudio
