@@ -56,12 +56,12 @@ if __name__ == "__main__":
                 input_obj=input_list,
                 input_text=input_text,
             )
-            print("Input text:", json.dumps(input_list, indent=4, ensure_ascii=False))
+            # print("Input text:", json.dumps(input_list, indent=4, ensure_ascii=False))
             for step in agent.stream(state):
                 node, state_update = next(iter(step.items())) 
                 state.update(state_update)
-                if node == "generate_node":
-                    print(f"Node: [{node}] output: {state_update.get("output_text")}, error:{state_update.get("error")}")
+                # if node == "generate_node":
+                #     print(f"Node: [{node}] output: {state_update.get("output_text")}, error:{state_update.get("error")}")
                 if node == "validate_node":
                     print(f"Node: [{node}] attempt: {state.get('attempts', 0)}, error:{state_update.get("error")}")
             
