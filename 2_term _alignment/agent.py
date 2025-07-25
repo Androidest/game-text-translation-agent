@@ -38,7 +38,7 @@ def create_term_aligment_agent(
                 return StructuredValidatingState(
                     error = ERROR_ALIGNMENT_LENGTH.format(
                         line=i,
-                        input_length=len(state.terms),
+                        input_length=len(sample["terms"]),
                         output_length=len(aligned_terms)
                     ),
                 )

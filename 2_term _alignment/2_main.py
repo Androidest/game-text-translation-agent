@@ -11,7 +11,7 @@ import json
 from langchain.callbacks import get_openai_callback
 from agent import *
 
-INPUT_PATH = "../data/term_extraction.final.xlsx"
+INPUT_PATH = "../data/term_extraction.final.cleaned.xlsx"
 OUTPUT_PATH = "../data/term_aligment.xlsx"
 
 if __name__ == "__main__":
@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     start = len(output_sheet)
     end = len(input_sheet)
-    batch_size = 10
+    batch_size = 5
     total_cached_tokens = 0
     total_input_tokens = 0
     total_output_tokens = 0
@@ -43,7 +43,7 @@ if __name__ == "__main__":
             sample = {
                 "cn": input_sheet[i+j, "CN"],
                 "es": input_sheet[i+j, "ES"],
-                "terms": input_sheet[i+j, "TERMS"],
+                "terms": json.loads(input_sheet[i+j, "TERMS"]),
             }
             input_list.append(sample)
 
@@ -58,7 +58,7 @@ if __name__ == "__main__":
             )
             print("Input text:", json.dumps(input_list, indent=4, ensure_ascii=False))
             for step in agent.stream(state):
-                node, state_update = next(iter(step.items()))
+                node, state_update = next(iter(step.items())) 
                 state.update(state_update)
                 if node == "generate_node":
                     print(f"Node: [{node}] output: {state_update.get("output_text")}, error:{state_update.get("error")}")
@@ -81,7 +81,7 @@ if __name__ == "__main__":
             break
 
         # save to terms_sheet
-        output_list = state["output_obj"].terms
+        output_list = state["output_obj"].alignments
         for j in range(len(input_list)):
             cn = input_sheet[i+j, "CN"]
             es = input_sheet[i+j, "ES"]
