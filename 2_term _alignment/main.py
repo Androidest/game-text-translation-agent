@@ -40,10 +40,12 @@ if __name__ == "__main__":
         # prepare input_list
         input_list = []
         for j in range(min(batch_size, end-i)):
-            cn = input_sheet[i+j, "CN"]
-            es = input_sheet[i+j, "ES"]
-            terms = input_sheet[i+j, "TERMS"]
-            input_list.append(cn)
+            sample = {
+                "cn": input_sheet[i+j, "CN"],
+                "es": input_sheet[i+j, "ES"],
+                "terms": input_sheet[i+j, "TERMS"],
+            }
+            input_list.append(sample)
 
         input_text=json.dumps(input_list, ensure_ascii=False)
         print("batch_str_len:", len(input_text))

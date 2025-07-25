@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from typing import List, Dict
 
 class TermAlignmentSchema(BaseModel):
-    terms: Dict[str, str] = Field(description="术语对齐的西班牙语翻译")
+    alignments: List[Dict[str, str]] = Field(description="数组每个元素对应每组中西平行文本的术语和对齐的西班牙语翻译")
 
 def create_term_aligment_agent(
         model,
@@ -18,7 +18,7 @@ def create_term_aligment_agent(
     
     def validate_alignment(state: StructuredValidatingState):
         input_list = state["input_obj"]
-        output_list = state["output_obj"].terms
+        output_list = state["output_obj"].alignments
 
         # check output length
         if len(output_list) != len(input_list):
@@ -29,16 +29,29 @@ def create_term_aligment_agent(
                 ),
             )
         
-        # check if the extracted translation are substrings of the input_text text
         for i in range(len(input_list)):
-            text = input_list[i]
-            for term in output_list[i]:
-                if term not in text:
-                    return StructuredValidatingState(
+            sample = input_list[i]
+            aligned_terms = output_list[i]
+
+            # check if the number of terms are the same
+            if len(sample["terms"]) != len(aligned_terms):
+                return StructuredValidatingState(
+                    error = ERROR_ALIGNMENT_LENGTH.format(
+                        line=i,
+                        input_length=len(state.terms),
+                        output_length=len(aligned_terms)
+                    ),
+                )
+
+            # check if the extracted translation are substrings of the spanish entire spanish translation
+            for term_cn, term_es in aligned_terms.items():
+                if term_es not in sample["es"]:
+                     return StructuredValidatingState(
                         error = ERROR_ALIGNMENT_LINE.format(
                             line=i,
-                            text=text,
-                            wrong_term=term
+                            es_text=sample["es"],
+                            term=term_cn,
+                            wrong_alignment=term_es
                         )
                     )
 
@@ -65,7 +78,24 @@ if __name__ == "__main__":
         max_attempts=1,
     )
 
-    input_list = ["#585天梯门票不足\n是否消耗{0}购买#585 1并挑战对手", "(初始)", "同伴6普通攻击", "Lv1 雨林幻境", "出战和助战的花灵，属性会直接加成到角色身上。\\n2、花灵升级需要消耗金币和花灵经验。\\n3、花灵升级到一定等级后，会需要突破才能继续升级。\\n4、每个品阶有等级上限，达到上限后，需要升阶才可以继续升级。\\n5、花灵达到一定等级后，会解锁或者升级对应技能，详情查看技能说明。"]
+    input_list = [
+        {   
+            "cn": "2个相同属性的主要出战花灵可以为你的攻击附上属性", 
+            "es": "2 Hadas Florales principales con los mismos atributos pueden agregar atributos a tus ataques", 
+            "terms": ["属性", "出战花灵", "攻击", "同属性"]
+        },
+        {
+            "cn": "(倒计时结束后点击中央柱子召唤下一组BOSS)",
+            "es": "(Pulsa el pilar central al terminar la cuenta regresiva para convocar el siguiente grupo de Jefes)",
+            "terms": ["点击", "召唤", "BOSS", "下", "中央柱子", "倒计时"]
+        },
+        {
+            "cn": "本观星术士再也不能忍耐了！{0}！",
+            "es": "¡No lo soporto más! ¡{0}!",
+            "terms": ["观星术士", "忍耐"]
+        }
+    ]
+    
     state = StructuredValidatingState(
         input_text=json.dumps(input_list, ensure_ascii=False),
         input_obj=input_list,
@@ -90,4 +120,4 @@ if __name__ == "__main__":
     else:
         print(json.dumps(input_list, indent=4, ensure_ascii=False))
         print(state["output_text"])
-        print(json.dumps(state["output_obj"].terms, indent=4, ensure_ascii=False))
+        print(json.dumps(state["output_obj"].alignments, indent=4, ensure_ascii=False))
