@@ -59,7 +59,7 @@ if __name__ == "__main__":
                 if node == "generate_node":
                     print(f"Node: [{node}] output: {state_update.get("output_text")}, error:{state_update.get("error")}")
                 if node == "validate_node":
-                    print(f"Node: [{node}] attempt: {state_update.get('attempts', 0)}, error:{state_update.get("error")}")
+                    print(f"Node: [{node}] attempt: {state.get('attempts', 0)}, error:{state_update.get("error")}")
             
             print("Cached tokens", cb.prompt_tokens_cached)
             print("Input tokens", cb.prompt_tokens)

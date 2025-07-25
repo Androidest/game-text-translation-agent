@@ -12,4 +12,5 @@ for i, (cn, terms, es) in tqdm(enumerate(src), desc="Cleaning Data:"):
         continue
     cleaned.append({ "CN": cn, "TERMS": terms, "ES": es })
 cleaned.save()
-
+print(f"Done! Total cleaned data: {len(cleaned)}")
+print(f"Saved to file {"../data/term_extraction.final.cleaned.xlsx"}")
