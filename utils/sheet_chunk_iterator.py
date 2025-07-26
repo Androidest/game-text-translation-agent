@@ -5,7 +5,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 from utils import Sheet
 from tqdm import tqdm
 
-class SheetPararellChunksIterator:
+class SheetParallelChunksIterator:
     def __init__(self, sheet: Sheet, max_lines:int, chunk_size:int, chunks:int, desc:str):
         self.sheet = sheet
         self.max_lines = max_lines
@@ -81,9 +81,9 @@ if __name__ == "__main__":
     print(s[:len(s)])
 
     s = Sheet("test.xlsx")
-    it = SheetPararellChunksIterator(s, max_lines=27, chunk_size=2, chunks=2, desc="Processing chunks")
-    for i, chunks in enumerate(it):
-        for chunk in chunks:
+    it = SheetParallelChunksIterator(s, max_lines=27, chunk_size=2, chunks=2, desc="Processing chunks")
+    for i, parallel_chunks in enumerate(it):
+        for chunk in parallel_chunks:
             print("Processing chunk:", chunk)
             values = [ {'CN':f"cn{k}", "ES":f"es{k}" } for k in range(chunk[0], chunk[1]) ]
             it.complete_chunk(chunk, values)

@@ -65,7 +65,7 @@ if __name__ == "__main__":
     start = len(output_sheet)
     max_lines = len(input_sheet)
     chunk_size = 5
-    chunks = 30
+    parallel_chunks = 30
     total_cached_tokens = 0
     total_input_tokens = 0
     total_output_tokens = 0
@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
     key_checker = keyStrokeListener()
     key_checker.add_hotkey(EXIT_HOT_KEY)
-    chunks_iterator = SheetPararellChunksIterator(output_sheet, max_lines, chunk_size, chunks, desc="Aligning terms")
+    chunks_iterator = SheetParallelChunksIterator(output_sheet, max_lines, chunk_size, parallel_chunks, desc="Aligning terms")
     for chunk_list in chunks_iterator:
         print('#'*100)
         print(f"Processing chunks: {json.dumps(chunk_list, ensure_ascii=False)}")
