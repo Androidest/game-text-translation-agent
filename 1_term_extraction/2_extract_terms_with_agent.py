@@ -13,8 +13,7 @@ from agent import *
 
 INPUT_PATH = "../data/game_lang_dataset_cleaned.xlsx"
 OUTPUT_PATH = "../data/term_extraction.xlsx"
-EXIT_HOT_KEY = "q"
-EXIT_HOT_KEY2 = "esc"
+EXIT_HOT_KEY = "esc"
 
 if __name__ == "__main__":
     agent = create_term_extraction_agent(
@@ -31,7 +30,6 @@ if __name__ == "__main__":
     )
     key_checker = keyStrokeListener()
     key_checker.add_hotkey(EXIT_HOT_KEY)
-    key_checker.add_hotkey(EXIT_HOT_KEY2)
 
     start = len(output_sheet)
     end = len(input_sheet)
@@ -101,7 +99,6 @@ if __name__ == "__main__":
         print("Total attempts so far:", total_attempts)
         print(f"====== Batch {i} - {i+batch_size} done ======")
 
-        if key_checker.has_key_pressed(f"{EXIT_HOT_KEY}") or \
-           key_checker.has_key_pressed(f"{EXIT_HOT_KEY2}"):
+        if key_checker.has_key_pressed(f"{EXIT_HOT_KEY}"):
             print(f"Exit hotkeys was pressed. Exiting...")
             break
