@@ -12,3 +12,4 @@ tensorboard
 torch
 torchvision
 torchaudio
+keyboard

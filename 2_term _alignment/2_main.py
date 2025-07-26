@@ -13,6 +13,8 @@ from agent import *
 
 INPUT_PATH = "../data/term_extraction.final.cleaned.xlsx"
 OUTPUT_PATH = "../data/term_aligment.xlsx"
+EXIT_HOT_KEY = "q"
+EXIT_HOT_KEY2 = "esc"
 
 if __name__ == "__main__":
     agent = create_term_aligment_agent(
@@ -27,6 +29,9 @@ if __name__ == "__main__":
         default_data={"CN": [], "ES":[], "TERMS": [], "TERMS_ES":[] },
         clear=False
     )
+    key_checker = keyStrokeListener()
+    key_checker.add_hotkey(EXIT_HOT_KEY)
+    key_checker.add_hotkey(EXIT_HOT_KEY2)
 
     start = len(output_sheet)
     end = len(input_sheet)
@@ -92,8 +97,14 @@ if __name__ == "__main__":
         # logs
         print("Saving Alignment Sheet...")
         output_sheet.save()
+        print("Alignment sheet saved to: ", OUTPUT_PATH)
         print("Total cached tokens so far:", total_cached_tokens)
         print("Total input tokens so far:", total_input_tokens)
         print("Total output tokens so far:", total_output_tokens)
         print("Total attempts so far:", total_attempts)
         print(f"====== Batch {i} - {i+batch_size} done ======")
+
+        if key_checker.has_key_pressed(f"{EXIT_HOT_KEY}") or \
+           key_checker.has_key_pressed(f"{EXIT_HOT_KEY2}"):
+            print(f"Exit hotkeys was pressed. Exiting...")
+            break
