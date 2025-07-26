@@ -12,7 +12,7 @@ from langchain.callbacks import get_openai_callback
 from agent import *
 
 INPUT_PATH = "../data/term_extraction.final.cleaned.xlsx"
-OUTPUT_PATH = "../data/term_aligment.xlsx"
+OUTPUT_PATH = "../data/term_alignment.xlsx"
 EXIT_HOT_KEY = "q"
 EXIT_HOT_KEY2 = "esc"
 
@@ -40,7 +40,9 @@ if __name__ == "__main__":
     total_input_tokens = 0
     total_output_tokens = 0
     total_attempts = 0
-    for i in tqdm(range(start, end, batch_size), desc=f"Aligning terms from {start} to {end}"):
+    progress_bar = tqdm(total=end, initial=start, desc=f"Aligning terms from {start} to {end}")
+
+    for i in range(start, end, batch_size):
         print(f"====== Batch {i} - {i+batch_size} starts ======")
         # prepare input_list
         input_list = []
@@ -97,6 +99,7 @@ if __name__ == "__main__":
         # logs
         print("Saving Alignment Sheet...")
         output_sheet.save()
+        progress_bar.update(len(input_list))
         print("Alignment sheet saved to: ", OUTPUT_PATH)
         print("Total cached tokens so far:", total_cached_tokens)
         print("Total input tokens so far:", total_input_tokens)

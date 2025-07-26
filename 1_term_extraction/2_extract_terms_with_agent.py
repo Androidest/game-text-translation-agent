@@ -13,6 +13,8 @@ from agent import *
 
 INPUT_PATH = "../data/game_lang_dataset_cleaned.xlsx"
 OUTPUT_PATH = "../data/term_extraction.xlsx"
+EXIT_HOT_KEY = "q"
+EXIT_HOT_KEY2 = "esc"
 
 if __name__ == "__main__":
     agent = create_term_extraction_agent(
@@ -27,6 +29,9 @@ if __name__ == "__main__":
         default_data={"CN": [], "TERMS": [], "ES":[]},
         clear=False
     )
+    key_checker = keyStrokeListener()
+    key_checker.add_hotkey(EXIT_HOT_KEY)
+    key_checker.add_hotkey(EXIT_HOT_KEY2)
 
     start = len(output_sheet)
     end = len(input_sheet)
@@ -35,7 +40,9 @@ if __name__ == "__main__":
     total_input_tokens = 0
     total_output_tokens = 0
     total_attempts = 0
-    for i in tqdm(range(start, end, batch_size), desc=f"Extracting terms from {start} to {end}"):
+    progress_bar = tqdm(total=end, initial=start, desc=f"Aligning terms from {start} to {end}")
+
+    for i in range(start, end, batch_size):
         print(f"====== Batch {i} - {i+batch_size} starts ======")
         # prepare input_list
         input_list = []
@@ -86,9 +93,15 @@ if __name__ == "__main__":
         
         print("Saving Term Sheet...")
         output_sheet.save()
+        progress_bar.update(len(input_list))
+        print("Alignment sheet saved to: ", OUTPUT_PATH)
         print("Total cached tokens so far:", total_cached_tokens)
         print("Total input tokens so far:", total_input_tokens)
         print("Total output tokens so far:", total_output_tokens)
         print("Total attempts so far:", total_attempts)
         print(f"====== Batch {i} - {i+batch_size} done ======")
-        # time.sleep(0.1)
+
+        if key_checker.has_key_pressed(f"{EXIT_HOT_KEY}") or \
+           key_checker.has_key_pressed(f"{EXIT_HOT_KEY2}"):
+            print(f"Exit hotkeys was pressed. Exiting...")
+            break
