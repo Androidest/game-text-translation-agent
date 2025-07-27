@@ -39,17 +39,20 @@ class Sheet:
     def __setitem__(self, indices, value):
         self.dataframe.loc[indices] = value
 
+    def __contains__(self, key):
+        return key in self.dataframe.index
+
     def append(self, value):
         self[len(self)] = value
 
     def column_names(self):
         return self.dataframe.columns
     
-    def save(self):
+    def save(self, index:bool=False):
         dirname = os.path.dirname(os.path.abspath(self.excel_file_path))
         if not os.path.exists(dirname):
             os.mkdir(dirname)
-        self.dataframe.to_excel(self.excel_file_path, sheet_name=self.sheet_name, index=False)
+        self.dataframe.to_excel(self.excel_file_path, sheet_name=self.sheet_name, index=index)
 
 if __name__ == "__main__":
     # read exsisting excel file
