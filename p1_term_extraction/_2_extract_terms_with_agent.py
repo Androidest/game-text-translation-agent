@@ -4,7 +4,7 @@ import asyncio
 import time
 from tqdm import tqdm
 import json
-from langchain.callbacks import get_openai_callback
+from langchain_community.callbacks.manager import get_openai_callback
 from p1_term_extraction.agent import *
 
 INPUT_PATH = PATH_DATA / "game_lang_dataset_cleaned.xlsx"

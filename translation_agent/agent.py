@@ -66,7 +66,7 @@ def create_term_aligment_agent(
     )
 
 if __name__ == "__main__":
-    from langchain.callbacks import get_openai_callback
+    from langchain_community.callbacks.manager import get_openai_callback
     import json
 
     agent = create_term_aligment_agent(

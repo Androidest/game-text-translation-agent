@@ -3,7 +3,7 @@ from p2_term_alignment.agent import *
 from utils import *
 import asyncio
 import json
-from langchain.callbacks import get_openai_callback
+from langchain_community.callbacks.manager import get_openai_callback
 
 INPUT_PATH = PATH_DATA / "term_extraction.final.cleaned.xlsx"
 OUTPUT_PATH = PATH_DATA / "term_alignment.xlsx"

@@ -9,7 +9,6 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.graph.state import StateNode, StateT, InputT, OutputT
 from langchain_core.messages import *
 from langchain_core.language_models import LanguageModelLike
-from langchain.callbacks import get_openai_callback
 from pydantic import BaseModel, Field
 from typing import List, Generic
 from typing_extensions import TypedDict, List, Union, Dict
