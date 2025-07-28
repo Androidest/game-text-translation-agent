@@ -105,7 +105,7 @@ class ParallelSheetChunkDispatcher:
             # if node == "generate_node":
             #     logs += f"Node: [{node}] output: {state_update.get("output_text")}, error:{state_update.get("error")}\n"
             if node == "validate_node":
-                logs += f"\nNode: [{node}] attempt: {state.get('attempts', 0)}, error:{state_update.get("error")}"
+                logs += f"Node: [{node}] attempt: {state.get('attempts', 0)}, error:{state_update.get("error")}\n"
 
         return state, logs
 
@@ -116,10 +116,10 @@ class ParallelSheetChunkDispatcher:
     def run(self, on_update:callable = None):
         start = len(self.output_sheet)
         max_lines = len(self.input_sheet)
-        total_cached_tokens = 0
-        total_input_tokens = 0
-        total_output_tokens = 0
-        total_attempts = 0
+        self.total_cached_tokens = 0
+        self.total_input_tokens = 0
+        self.total_output_tokens = 0
+        self.total_attempts = 0
         chunks_iterator = ParallelSheetChunksIterator(self.output_sheet, max_lines, self.chunk_size, self.parallel_chunks, desc=self.desc)
         
         for chunk_list in chunks_iterator:
@@ -133,8 +133,8 @@ class ParallelSheetChunkDispatcher:
                 # process chunks results
                 for (start, end), (state, logs) in zip(chunk_list, results):
                     print(f"========== Chunk ({start} - {end}) starts ==========")
-                    print(f"\nbatch_str_len: {len(state["input_text"])}")
-                    print(logs)
+                    print(f"batch_str_len: {len(state["input_text"])}")
+                    print(logs, end="")
 
                     # validate a chunk
                     if state.get("error"):
@@ -146,25 +146,25 @@ class ParallelSheetChunkDispatcher:
                         values = self.output_chunk_to_sheet((start, end), state)
                         chunks_iterator.complete_chunk((start, end), values)
 
-                    total_attempts += state["attempts"]
+                    self.total_attempts += state["attempts"]
                     print(f"========== Chunk ({start} - {end}) done ==========\n")
 
                 # log token usage
                 print("Cached tokens", cb.prompt_tokens_cached)
                 print("Input tokens", cb.prompt_tokens)
                 print("Output tokens", cb.completion_tokens) 
-                total_cached_tokens += cb.prompt_tokens_cached
-                total_input_tokens += cb.prompt_tokens
-                total_output_tokens += cb.completion_tokens
+                self.total_cached_tokens += cb.prompt_tokens_cached
+                self.total_input_tokens += cb.prompt_tokens
+                self.total_output_tokens += cb.completion_tokens
             
             # logs
             print("Saving output sheet...")
             self.output_sheet.save()
             print("Sheet saved to: ", self.output_sheet.excel_file_path)
-            print("Total cached tokens so far:", total_cached_tokens)
-            print("Total input tokens so far:", total_input_tokens)
-            print("Total output tokens so far:", total_output_tokens)
-            print("Total attempts so far:", total_attempts)
+            print("Total cached tokens so far:", self.total_cached_tokens)
+            print("Total input tokens so far:", self.total_input_tokens)
+            print("Total output tokens so far:", self.total_output_tokens)
+            print("Total attempts so far:", self.total_attempts)
             print('#'*100)
             print("\n")
 
