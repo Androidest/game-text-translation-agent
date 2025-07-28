@@ -23,7 +23,7 @@ class TermRetriever:
     def retrieve(self, text):
         terms = {}
         for word in self.tokenizer.cut(text):
-            if word in self.terms_sheet.dataframe.index:
+            if word not in terms and word in self.terms_sheet.dataframe.index:
                 terms[word] = json.loads(self.terms_sheet[word, "TERM_ES"])
         return terms
     

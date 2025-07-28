@@ -1,37 +1,58 @@
 #%%
-from p1_term_extraction.agent import *
+from translation_agent.agent import *
 from utils import *
 import json
-
-INPUT_PATH = PATH_DATA / "game_lang_dataset_cleaned.xlsx"
-OUTPUT_PATH = PATH_DATA / "term_extraction.xlsx"
+from p3_term_retrieval import TermRetriever
 
 class TermExtractorChunkDispatcher(ParallelSheetChunkDispatcher):
-    def input_chunk_to_agent(self, chunk_index:tuple) -> StructuredValidatingState:
-        # prepare input_list
-        input_list = []
-        for i in range(chunk_index[0], chunk_index[1]):
-            input_list.append(input_sheet[i, "CN"])
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.term_retriever = TermRetriever()
+        self.first_col = self.input_sheet.column_names()[0]
 
-        input_text=json.dumps(input_list, ensure_ascii=False)
+    def input_chunk_to_agent(self, chunk_index:tuple) -> StructuredValidatingState:
+        # prepare input
+        start, end = chunk_index
+        cn_dict = {}
+        term_dict = {}
+        for i, r in enumerate(range(start, end)):
+            cn = self.input_sheet[r, self.first_col]
+            terms = self.term_retriever.retrieve(cn)
+            cn_dict[f"{i}"] = cn
+            term_dict.update(terms)
+
+        input_obj = TranslationInputSchema(
+            cn_dict=cn_dict,
+            term_dict=term_dict,
+        )
+
         return StructuredValidatingState(
-            input_obj=input_list,
-            input_text=input_text,
+            input_obj=input_obj,
+            input_text=input_obj.to_prompt(),
         )
     
     def output_chunk_to_sheet(self, chunk_index:tuple, state:StructuredValidatingState) -> list[dict]:
         start, end = chunk_index
-        output_list = state["output_obj"].terms
+        cn_dict = state["input_obj"].cn_dict
+        es_dict = state["output_obj"].translations
+
         values = []
         for i in range(start, end):
-            cn = input_sheet[i, "CN"]
-            es = input_sheet[i, "ES"]
-            terms = json.dumps(output_list[i-start], ensure_ascii=False)
-            values.append({ "CN": cn, "TERMS": f"{terms}", "ES": es })
+            index_key = f"{i-start}"
+            if self.input_sheet[i, self.first_col] != cn_dict[index_key]:
+                raise ValueError(f"CN not match: {self.input_sheet[i, self.first_col]} != {cn_dict[index_key]}")
+
+            cn = cn_dict[index_key]
+            es = es_dict[index_key]
+            terms = json.dumps(self.term_retriever.retrieve(cn), ensure_ascii=False)
+            values.append({ "CN": cn, "ES": es, "TERMS": terms })
         return values
 
 if __name__ == "__main__":
-    agent = create_term_extraction_agent(
+    INPUT_PATH = PATH_DATA / "test.xlsx"
+    OUTPUT_PATH = INPUT_PATH.parent / INPUT_PATH.name.replace(".xlsx", ".translated.xlsx")
+
+    agent = create_translation_agent(
         model=deepseek, 
         max_attempts=5
     )
@@ -40,15 +61,15 @@ if __name__ == "__main__":
     )
     output_sheet = Sheet(
         excel_file_path=OUTPUT_PATH,
-        default_data={"CN": [], "TERMS": [], "ES":[]},
+        default_data={"CN": [], "ES":[], "TERMS": []},
         clear=False
     )
     dispatcher = TermExtractorChunkDispatcher(
-        chunk_size=10,
-        parallel_chunks=20,
+        chunk_size=7,
+        parallel_chunks=10,
         input_sheet=input_sheet,
         output_sheet=output_sheet,
         agent=agent,
-        desc="Extracting terms"
+        desc="Translating"
     )
     dispatcher.run()
