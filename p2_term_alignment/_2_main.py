@@ -13,9 +13,9 @@ class TermAlignmentChunkDispatcher(ParallelSheetChunkDispatcher):
         input_list = []
         for i in range(chunk_index[0], chunk_index[1]):
             sample = {
-                "cn": input_sheet[i, "CN"],
-                "es": input_sheet[i, "ES"],
-                "terms": json.loads(input_sheet[i, "TERMS"]),
+                "cn": self.input_sheet[i, "CN"],
+                "es": self.input_sheet[i, "ES"],
+                "terms": json.loads(self.input_sheet[i, "TERMS"]),
             }
             input_list.append(sample)
 
@@ -30,9 +30,9 @@ class TermAlignmentChunkDispatcher(ParallelSheetChunkDispatcher):
         output_list = state["output_obj"].alignments
         values = []
         for i in range(start, end):
-            cn = input_sheet[i, "CN"]
-            es = input_sheet[i, "ES"]
-            terms = input_sheet[i, "TERMS"]
+            cn = self.input_sheet[i, "CN"]
+            es = self.input_sheet[i, "ES"]
+            terms = self.input_sheet[i, "TERMS"]
             terms_es = json.dumps(output_list[i-start], ensure_ascii=False)
             values.append({ "CN": cn, "ES": es, "TERMS": terms, "TERMS_ES": terms_es })
         return values

@@ -11,7 +11,7 @@ class TermExtractorChunkDispatcher(ParallelSheetChunkDispatcher):
         # prepare input_list
         input_list = []
         for i in range(chunk_index[0], chunk_index[1]):
-            input_list.append(input_sheet[i, "CN"])
+            input_list.append(self.input_sheet[i, "CN"])
 
         input_text=json.dumps(input_list, ensure_ascii=False)
         return StructuredValidatingState(
@@ -24,8 +24,8 @@ class TermExtractorChunkDispatcher(ParallelSheetChunkDispatcher):
         output_list = state["output_obj"].terms
         values = []
         for i in range(start, end):
-            cn = input_sheet[i, "CN"]
-            es = input_sheet[i, "ES"]
+            cn = self.input_sheet[i, "CN"]
+            es = self.input_sheet[i, "ES"]
             terms = json.dumps(output_list[i-start], ensure_ascii=False)
             values.append({ "CN": cn, "TERMS": f"{terms}", "ES": es })
         return values
