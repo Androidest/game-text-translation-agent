@@ -1,15 +1,44 @@
 #%%
+from p1_term_extraction.agent import *
 from utils import *
 import asyncio
-import time
-from tqdm import tqdm
 import json
 from langchain_community.callbacks.manager import get_openai_callback
-from p1_term_extraction.agent import *
 
 INPUT_PATH = PATH_DATA / "game_lang_dataset_cleaned.xlsx"
 OUTPUT_PATH = PATH_DATA / "term_extraction.xlsx"
 EXIT_HOT_KEY = "esc"
+
+async def async_process_chunk(chunk_index:tuple, input_sheet:Sheet, agent:StateGraph):
+    # prepare input_list
+    input_list = []
+    for i in range(chunk_index[0], chunk_index[1]):
+        input_list.append(input_sheet[i, "CN"])
+
+    input_text=json.dumps(input_list, ensure_ascii=False)
+
+    # extract terms
+    logs = f"====== Chunk ({chunk_index[0]} - {chunk_index[1]}) starts ======"
+    logs += f"\nbatch_str_len: {len(input_text)}"
+    # logs += f"\nInput text: {input_text}"
+
+    state = StructuredValidatingState(
+        input_obj=input_list,
+        input_text=input_text,
+    )
+    async for step in agent.astream(state):
+        node, state_update = next(iter(step.items())) 
+        state.update(state_update)
+        # if node == "generate_node":
+        #     logs += f"Node: [{node}] output: {state_update.get("output_text")}, error:{state_update.get("error")}\n"
+        if node == "validate_node":
+            logs += f"\nNode: [{node}] attempt: {state.get('attempts', 0)}, error:{state_update.get("error")}"
+
+    return state, logs
+
+async def async_process_multiple_chunks(chunk_list:list, input_sheet:Sheet, agent:StateGraph):
+    tasks = [async_process_chunk(chunk_index, input_sheet, agent) for chunk_index in chunk_list]
+    return await asyncio.gather(*tasks)
 
 if __name__ == "__main__":
     agent = create_term_extraction_agent(
@@ -24,76 +53,68 @@ if __name__ == "__main__":
         default_data={"CN": [], "TERMS": [], "ES":[]},
         clear=False
     )
-    key_checker = keyStrokeListener()
-    key_checker.add_hotkey(EXIT_HOT_KEY)
-
     start = len(output_sheet)
-    end = len(input_sheet)
-    batch_size = 10
+    max_lines = len(input_sheet)
+    chunk_size = 5
+    parallel_chunks = 30
     total_cached_tokens = 0
     total_input_tokens = 0
     total_output_tokens = 0
     total_attempts = 0
-    progress_bar = tqdm(total=end, initial=start, desc=f"Aligning terms from {start} to {end}")
+    
+    key_checker = keyStrokeListener()
+    key_checker.add_hotkey(EXIT_HOT_KEY)
+    chunks_iterator = SheetParallelChunksIterator(output_sheet, max_lines, chunk_size, parallel_chunks, desc="Extracting terms")
+    
+    for chunk_list in chunks_iterator:
+        print('#'*100)
+        print(f"Processing chunks: {json.dumps(chunk_list, ensure_ascii=False)}")
+        print(f"Note: Press '{EXIT_HOT_KEY}' to exit safely at any time.")
 
-    for i in range(start, end, batch_size):
-        print(f"====== Batch {i} - {i+batch_size} starts ======")
-        # prepare input_list
-        input_list = []
-        batch_str_len = 0
-        for j in range(min(batch_size, end-i)):
-            cn = input_sheet[i+j, "CN"]
-            input_list.append(cn)
-            batch_str_len += len(cn)
-        print("batch_str_len:", batch_str_len)
-
-        # extract terms, show the extraction process
         with get_openai_callback() as cb:
-            state = StructuredValidatingState(
-                input_obj=input_list,
-                input_text=json.dumps(input_list, ensure_ascii=False),
-            )
-            print("Input text:", json.dumps(input_list, indent=4, ensure_ascii=False))
-            for step in agent.stream(state):
-                node, state_update = next(iter(step.items()))
-                state.update(state_update)
-                if node == "generate_node":
-                    print(f"Node: [{node}] output: {state_update.get("output_text")}, error:{state_update.get("error")}")
-                if node == "validate_node":
-                    print(f"Node: [{node}] attempt: {state.get('attempts', 0)}, error:{state_update.get("error")}")
-            
+            # process the chunks in parallel
+            results = asyncio.run(async_process_multiple_chunks(chunk_list, input_sheet, agent))
+            # process the chunks results
+            for (start, end), (state, logs) in zip(chunk_list, results):
+                print(logs)
+
+                # validate the extraction
+                if state.get("error"):
+                    print(f"Unable to extract terms from line ({start} - {end})", end="\n")
+                    print("Input list:\n", state["input_text"])
+                    print("Wrong output list:\n", state["output_text"])
+                # complete the chunk
+                else:
+                    output_list = state["output_obj"].terms
+                    values = []
+                    for i in range(start, end):
+                        cn = input_sheet[i, "CN"]
+                        es = input_sheet[i, "ES"]
+                        terms = json.dumps(output_list[i-start], ensure_ascii=False)
+                        values.append({ "CN": cn, "TERMS": f"{terms}", "ES": es })
+                    chunks_iterator.complete_chunk((start, end), values)
+                    total_attempts += state["attempts"]
+                
+                print(f"========== Chunk ({start} - {end}) done ==========\n")
+
+            # log token usage
             print("Cached tokens", cb.prompt_tokens_cached)
             print("Input tokens", cb.prompt_tokens)
             print("Output tokens", cb.completion_tokens) 
             total_cached_tokens += cb.prompt_tokens_cached
             total_input_tokens += cb.prompt_tokens
             total_output_tokens += cb.completion_tokens
-            total_attempts += state["attempts"]
         
-        # validate the extraction
-        if not state.get("output_obj"):
-            print(f"Unable to extract terms from line ({i} - {i+batch_size})", end="\n")
-            print("Input list:\n", state["input_text"])
-            print("Wrong output list:\n", state["output_text"])
-            break
-
-        # save to terms_sheet
-        output_list = state["output_obj"].terms
-        for j in range(len(input_list)):
-            cn = input_sheet[i+j, "CN"]
-            es = input_sheet[i+j, "ES"]
-            terms = json.dumps(output_list[j], ensure_ascii=False)
-            output_sheet[i+j] = { "CN": cn, "TERMS": f"{terms}", "ES": es }
-        
+        # logs
         print("Saving Term Sheet...")
         output_sheet.save()
-        progress_bar.update(len(input_list))
-        print("Alignment sheet saved to: ", OUTPUT_PATH)
+        print("Term sheet saved to: ", OUTPUT_PATH)
         print("Total cached tokens so far:", total_cached_tokens)
         print("Total input tokens so far:", total_input_tokens)
         print("Total output tokens so far:", total_output_tokens)
         print("Total attempts so far:", total_attempts)
-        print(f"====== Batch {i} - {i+batch_size} done ======")
+        print('#'*100)
+        print("\n")
 
         if key_checker.has_key_pressed(f"{EXIT_HOT_KEY}"):
             print(f"Exit hotkeys was pressed. Exiting...")

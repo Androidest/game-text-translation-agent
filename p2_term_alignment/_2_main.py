@@ -70,6 +70,7 @@ if __name__ == "__main__":
     key_checker = keyStrokeListener()
     key_checker.add_hotkey(EXIT_HOT_KEY)
     chunks_iterator = SheetParallelChunksIterator(output_sheet, max_lines, chunk_size, parallel_chunks, desc="Aligning terms")
+    
     for chunk_list in chunks_iterator:
         print('#'*100)
         print(f"Processing chunks: {json.dumps(chunk_list, ensure_ascii=False)}")
