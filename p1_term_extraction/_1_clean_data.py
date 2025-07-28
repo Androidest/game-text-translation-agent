@@ -1,9 +1,10 @@
 #%%
-import os
-os.chdir(os.path.join(os.path.dirname(__file__), "../"))
 from utils import *
 import re
 from tqdm import tqdm
+
+INPUT_SHEET_PATH = PATH_DATA / "game_lang_dataset.xlsx"
+OUTPUT_SHEET_PATH = PATH_DATA / "game_lang_dataset_cleaned.xlsx"
 
 def is_valid_text_cn(text):
     if not text or not isinstance(text, str) or text == "":
@@ -30,10 +31,11 @@ def is_valid_text_es(text):
     # the text is invalid if it contains Chinese, Korean or Japanese characters
     return not bool(pattern.search(text))
 
-src = Sheet("data/game_lang_dataset.xlsx")
-cleaned = Sheet("data/game_lang_dataset_cleaned.xlsx", default_data={ "CN": [], "ES": [] }, clear=True)
-for i, (cn, es) in tqdm(enumerate(src), desc="Cleaning Data:"):
-    if is_valid_text_cn(cn) and is_valid_text_es(es):
-        cleaned.append({ "CN": cn, "ES": es })
-cleaned.save()
+if __name__ == "__main__":
+    src = Sheet(INPUT_SHEET_PATH)
+    cleaned = Sheet(OUTPUT_SHEET_PATH, default_data={ "CN": [], "ES": [] }, clear=True)
+    for cn, es in tqdm(src, desc="Cleaning Data"):
+        if is_valid_text_cn(cn) and is_valid_text_es(es):
+            cleaned.append({ "CN": cn, "ES": es })
+    cleaned.save() 
 

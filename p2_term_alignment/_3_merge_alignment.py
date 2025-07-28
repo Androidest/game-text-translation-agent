@@ -1,15 +1,12 @@
 #%%
-import os
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 from utils import *
 from tqdm import tqdm
 import json
 import re
 
-INPUT_PATH = "../data/term_alignment.xlsx"
-SCORE_PATH = "../data/term_score.final.xlsx"
-OUTPUT_PATH = "../data/term_alignment.merged.xlsx"
+INPUT_PATH = PATH_DATA / "term_alignment.xlsx"
+SCORE_PATH = PATH_DATA / "term_score.final.xlsx"
+OUTPUT_PATH = PATH_DATA / "term_alignment.merged.xlsx"
 
 def spanish_plural_to_singular(text):
     # 规则1: 单词以元音+s结尾(如casas -> casa)

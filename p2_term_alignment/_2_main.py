@@ -1,16 +1,12 @@
 #%%
-import os
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
-
+from p2_term_alignment.agent import *
 from utils import *
 import asyncio
 import json
 from langchain.callbacks import get_openai_callback
-from agent import *
 
-INPUT_PATH = "../data/term_extraction.final.cleaned.xlsx"
-OUTPUT_PATH = "../data/term_alignment.xlsx"
+INPUT_PATH = PATH_DATA / "term_extraction.final.cleaned.xlsx"
+OUTPUT_PATH = PATH_DATA / "term_alignment.xlsx"
 EXIT_HOT_KEY = "esc"
 
 async def async_process_chunk(chunk_index:tuple, input_sheet:Sheet, agent:StateGraph):

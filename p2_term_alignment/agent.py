@@ -1,10 +1,6 @@
 #%%
-import os
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
+from p2_term_alignment.promtps import *
 from utils import *
-
-from promtps import *
 from pydantic import BaseModel, Field
 from typing import List, Dict
 

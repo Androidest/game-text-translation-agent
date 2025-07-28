@@ -31,7 +31,7 @@ class Sheet:
 
     def __iter__(self):
         for i in range(self.dataframe.shape[0]):
-            yield self.dataframe.values[i]
+            yield self.dataframe.loc[i]
     
     def __getitem__(self, indices):
         return self.dataframe.loc[indices]

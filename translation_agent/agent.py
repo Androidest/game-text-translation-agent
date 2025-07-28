@@ -1,15 +1,11 @@
 #%%
-import os
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
+from p2_term_alignment.promtps import *
 from utils import *
-
-from promtps import *
 from pydantic import BaseModel, Field
 from typing import List, Dict
 
 class TermAlignmentSchema(BaseModel):
-    translations: Dict[str, str] = Field(description="数组每个元素对应每组中西平行文本的术语和对齐的西班牙语翻译")
+    alignments: List[Dict[str, str]] = Field(description="数组每个元素对应每组中西平行文本的术语和对齐的西班牙语翻译")
 
 def create_term_aligment_agent(
         model,

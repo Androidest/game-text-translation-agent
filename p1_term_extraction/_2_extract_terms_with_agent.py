@@ -1,18 +1,14 @@
 #%%
-import os
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
-
 from utils import *
 import asyncio
 import time
 from tqdm import tqdm
 import json
 from langchain.callbacks import get_openai_callback
-from agent import *
+from p1_term_extraction.agent import *
 
-INPUT_PATH = "../data/game_lang_dataset_cleaned.xlsx"
-OUTPUT_PATH = "../data/term_extraction.xlsx"
+INPUT_PATH = PATH_DATA / "game_lang_dataset_cleaned.xlsx"
+OUTPUT_PATH = PATH_DATA / "term_extraction.xlsx"
 EXIT_HOT_KEY = "esc"
 
 if __name__ == "__main__":

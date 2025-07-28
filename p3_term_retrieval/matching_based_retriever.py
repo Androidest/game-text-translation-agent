@@ -1,14 +1,10 @@
 #%% 
-# Imports
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from utils import *
 import jieba
 import json
 from tqdm import tqdm
 
-TERM_ALIGNMENT_PATH = "../data/term_alignment.merged.final.xlsx"
+TERM_ALIGNMENT_PATH = PATH_DATA / "term_alignment.merged.final.xlsx"
 
 class TermRetriever:
     def __init__(self, 

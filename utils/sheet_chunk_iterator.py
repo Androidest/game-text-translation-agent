@@ -1,7 +1,4 @@
 #%%
-import os
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 from utils import Sheet
 from tqdm import tqdm
 
@@ -77,7 +74,7 @@ if __name__ == "__main__":
     for i in range(len(l)):
         s[i] = l[i]
 
-    # s.save()
+    s.save()
     print(s[:len(s)])
 
     s = Sheet("test.xlsx")

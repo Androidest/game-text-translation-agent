@@ -1,18 +1,15 @@
 #%%
-import os
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 from utils import *
 from tqdm import tqdm
 
-INPUT_PATH = "../data/term_extraction.final.xlsx"
-OUTPUT_PATH = "../data/term_extraction.final.cleaned.xlsx"
+INPUT_PATH = PATH_DATA / "term_extraction.final.xlsx"
+OUTPUT_PATH = PATH_DATA / "term_extraction.final.cleaned.xlsx"
 
 src = Sheet(INPUT_PATH)
 cleaned = Sheet(OUTPUT_PATH, default_data={ "CN": [], "TERMS": [], "ES": [] }, clear=True)
 
 term_groups = set()
-for i, (cn, terms, es) in tqdm(enumerate(src), desc="Cleaning Data:"):
+for i, (cn, terms, es) in enumerate(tqdm(src, desc="Cleaning Data:")):
     if terms == "[]":
         continue
     if terms in term_groups:
