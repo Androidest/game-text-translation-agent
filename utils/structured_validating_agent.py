@@ -10,7 +10,6 @@ from langgraph.graph.state import StateNode, StateT, InputT, OutputT
 from langchain_core.messages import *
 from langchain_core.language_models import LanguageModelLike
 from langchain.callbacks import get_openai_callback
-from IPython.display import Image, display
 from pydantic import BaseModel, Field
 from typing import List, Generic
 from typing_extensions import TypedDict, List, Union, Dict
@@ -123,6 +122,7 @@ def create_structured_validating_agent(
     return graph.compile(name=agent_name)
 
 def display_graph(graph:StateGraph):
+    from IPython.display import Image, display
     display(Image(graph.get_graph().draw_mermaid_png()))
 
 # Test

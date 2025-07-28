@@ -1,1 +1,1 @@
-from .matching_based_extractor import *
+from .matching_based_retriver import *
