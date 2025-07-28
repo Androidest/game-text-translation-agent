@@ -13,20 +13,27 @@ TRANSLATION_INSTRUCTION = """你是专业的游戏文本翻译工具。输入是
 4. [重点]译文要【尽量简短】，否者会超出UI显式范围，特别是四字词的翻译要更短。
 5. [重点]要保留原文的各种富文本样式，例如颜色、大小、加粗、斜体等。
 6. [重点]要保留原文的特殊参数格式，例如{0}、{var1}等参数。
-#输出格式与输入的原文字典格式一样，必须是一个严格的JSON字典（输出译文字典）：
+#输出译文字典格式说明：
 1. 键是译文的索引，和原文索引一一对应（键：译文索引）。
 2. 值是对应原文的西班牙语翻译（值：译文）。
 3. [重点]输出的字典长度要跟输入的原文字典长度【完全一致】，即输入和输出的【样本数量必须一样】。
 4. [重点]每条译文都有其对应的原文样本，并且和原文一样的索引号，【顺序不能乱】。
 
-例如:
+#例如:
 ##输入术语字典：
 {"天梯门票": ["Ticket del Escalón", "Ticket del Láderas"], "花灵碎片": ["Fragmento de Hada Floral"], "级": ["Nv."], "史诗": ["Épico"]}
 ##输入原文字典：
 {"0": "#585天梯门票不足\n是否消耗{0}购买#585 1", "1": "史诗花灵碎片·地", "2": "大量的1级结晶，属性类型随机"}
 
-你应该输出译文字典:
-{"translations": {"0": "Ticket de Escalón #585 insuficiente\n¿Deseas consumir {0} para comprar 1 #585?", "1": "Fragmento de Hada Floral Épica - Tierra", "2": "Cantidad grande de Cristales Nv.1 de un atributo aleatorio."}}
+#[重点]根据前面的输入样例，你应该输出的严格的JSON文本，【translations里是输出译文字典】:
+{
+    "translations": 
+    {
+        "0": "Ticket de Escalón #585 insuficiente\n¿Deseas consumir {0} para comprar 1 #585?", 
+        "1": "Fragmento de Hada Floral Épica - Tierra", 
+        "2": "Cantidad grande de Cristales Nv.1 de un atributo aleatorio."
+    }
+}
 """
 
 INPUT_PROMPT_TEMPLATE = """##输入术语字典：

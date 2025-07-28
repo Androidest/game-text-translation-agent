@@ -48,8 +48,8 @@ class TermExtractorChunkDispatcher(ParallelSheetChunkDispatcher):
             values.append({ "CN": cn, "ES": es, "TERMS": terms })
         return values
 
-if __name__ == "__main__":
-    INPUT_PATH = PATH_DATA / "test.xlsx"
+def translate(data_path:str, on_update:callable = None):
+    INPUT_PATH = Path(data_path)
     OUTPUT_PATH = INPUT_PATH.parent / INPUT_PATH.name.replace(".xlsx", ".translated.xlsx")
 
     agent = create_translation_agent(
@@ -65,11 +65,15 @@ if __name__ == "__main__":
         clear=False
     )
     dispatcher = TermExtractorChunkDispatcher(
-        chunk_size=7,
+        chunk_size=5,
         parallel_chunks=10,
         input_sheet=input_sheet,
         output_sheet=output_sheet,
         agent=agent,
         desc="Translating"
     )
-    dispatcher.run()
+    dispatcher.run(on_update=on_update)
+    return output_sheet
+
+if __name__ == "__main__":
+    translate(PATH_DATA / "test.xlsx", on_update=lambda dispatcher: print("Updating"))

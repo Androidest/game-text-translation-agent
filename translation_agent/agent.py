@@ -72,11 +72,11 @@ if __name__ == "__main__":
             "1": "(倒计时结束后点击中央柱子召唤下一组BOSS)",
         },
         term_dict={
-            "出战花灵": "Hadas Florales principales",
-            "同属性": "con los mismos atributos",
-            "召唤": "convocar",
-            "BOSS": "Jefes",
-            "中央柱子": "pilar central",
+            "出战花灵": ["Hadas Florales principales"],
+            "同属性": ["con los mismos atributos"],
+            "召唤": ["convocar"],
+            "BOSS": ["Jefes"],
+            "中央柱子": ["pilar central"],
         }
     )
     input_text = input_obj.to_prompt()

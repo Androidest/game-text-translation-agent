@@ -113,7 +113,7 @@ class ParallelSheetChunkDispatcher:
         tasks = [self.async_process_chunk(chunk_index) for chunk_index in chunk_list]
         return await asyncio.gather(*tasks)
 
-    def run(self):
+    def run(self, on_update:callable = None):
         start = len(self.output_sheet)
         max_lines = len(self.input_sheet)
         total_cached_tokens = 0
@@ -168,9 +168,15 @@ class ParallelSheetChunkDispatcher:
             print('#'*100)
             print("\n")
 
-            if self.key_checker.has_key_pressed(f"{self.exit_hot_key}"):
+            if on_update:
+                on_update(self)
+
+            if self.is_pressed_exit():
                 print(f"Exit hotkeys was pressed. Exiting...")
                 break
+
+    def is_pressed_exit(self):
+        return self.key_checker.has_key_pressed(f"{self.exit_hot_key}")
 
     def input_chunk_to_agent(self, chunk_index:tuple) -> StructuredValidatingState:
         raise NotImplementedError("input_chunk_to_agent(self, chunk_index:tuple) -> StructuredValidatingState\nmust be implemented")
