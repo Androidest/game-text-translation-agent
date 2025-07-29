@@ -4,6 +4,15 @@ from utils import *
 import json
 from p3_term_retrieval import TermRetriever
 
+def capitalize_first_char(s):
+    if not s:
+        return s
+    first_char = s[0]
+    if first_char.isalpha():
+        return first_char.upper() + s[1:]
+    else:
+        return s
+
 class TermExtractorChunkDispatcher(ParallelSheetChunkDispatcher):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -44,6 +53,7 @@ class TermExtractorChunkDispatcher(ParallelSheetChunkDispatcher):
 
             cn = cn_dict[index_key]
             es = es_dict[index_key]
+            es = capitalize_first_char(es)
             terms = json.dumps(self.term_retriever.retrieve(cn), ensure_ascii=False)
             values.append({ "CN": cn, "ES": es, "TERMS": terms })
         return values
@@ -61,7 +71,7 @@ def translate(data_path:str, on_update:callable = None):
     )
     output_sheet = Sheet(
         excel_file_path=OUTPUT_PATH,
-        default_data={"CN": [], "ES":[], "TERMS": []},
+        conlumns=["CN", "ES", "TERMS"],
         clear=False
     )
     dispatcher = TermExtractorChunkDispatcher(

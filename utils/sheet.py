@@ -1,15 +1,27 @@
 #%%
 import pandas as pd
+from pandas._typing import Axes, Dtype
 import os
+import numpy as np
 
 class Sheet:
-    def __init__(self, excel_file_path:str, sheet_name:str=None, default_data:dict=None, clear:bool=False):
+    def __init__(self, 
+            excel_file_path:str, 
+            sheet_name:str=None, 
+            default_data:dict=None, 
+            index:Axes=None,
+            conlumns:Axes=None, 
+            dtype:np.dtype=None, 
+            clear:bool=False
+            ):
+        
         self.excel_file_path = excel_file_path
         self.sheet_name = sheet_name
-        if default_data is not None and (clear or not os.path.exists(excel_file_path)):
+        if (default_data or conlumns) and \
+           (clear or not os.path.exists(excel_file_path)):
             if sheet_name is None:
                 self.sheet_name = 'Sheet1'
-            self.dataframe = pd.DataFrame(default_data)
+            self.dataframe = pd.DataFrame(data=default_data, index=index, columns=conlumns, dtype=dtype)
         else:
             try:
                 with pd.ExcelFile(excel_file_path) as excel_file:
