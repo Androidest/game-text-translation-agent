@@ -27,7 +27,7 @@ class RAG:
         self.model = TextEmbModel(device=device)
         print(f"Model loaded on device:{self.model.device}")
 
-    def search_sim(self, text: str):
+    def retrieve_sim(self, text: str):
         emb = self.model.get_text_emb(text)
         faiss.normalize_L2(emb) # for cosine similarity
         cos_sim, indexes = self.index.search(emb, k=1)
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     test_sheet = Sheet(TEST_SHEET_PATH)
     rag = RAG()
     target_text = list(test_sheet[[136,1180,1162,1170,938,1230,1230,1227], "cn"])
-    texts, cos_sim = rag.search_sim(target_text)
+    texts, cos_sim = rag.retrieve_sim(target_text)
     # mask = cos_sim >= 0.9
     # texts, cos_sim, target_text = texts[mask], cos_sim[mask], np.array(target_text)[mask]
     for i in range(len(texts)):
