@@ -1,8 +1,9 @@
 #%%
 from translation_agent.promtps import *
-from utils import *
+from utils import StructuredValidatingState, create_structured_validating_agent, deepseek
 from pydantic import BaseModel, Field
-from typing import Dict
+from typing import Dict, List
+import json
 
 class TranslationInputSchema(BaseModel):
     term_dict: Dict[str, List[str]] = Field(description="术语字典")
@@ -59,7 +60,6 @@ def create_translation_agent(
 
 if __name__ == "__main__":
     from langchain_community.callbacks.manager import get_openai_callback
-    import json
 
     agent = create_translation_agent(
         model=deepseek,

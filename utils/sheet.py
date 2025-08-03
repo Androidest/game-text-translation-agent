@@ -58,7 +58,7 @@ class Sheet:
         self[len(self)] = value
 
     def column_names(self):
-        return self.dataframe.columns
+        return list(self.dataframe.columns)
     
     def save(self, index:bool=False):
         dirname = os.path.dirname(os.path.abspath(self.excel_file_path))

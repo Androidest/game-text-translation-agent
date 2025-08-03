@@ -1,8 +1,9 @@
 #%%
 from translation_agent.agent import *
-from utils import *
+from utils import ParallelSheetChunkDispatcher, Sheet, PATH_DATA
 import json
 from p3_term_retrieval import TermRetriever
+from pathlib import Path
 
 def capitalize_first_char(s):
     if not s:

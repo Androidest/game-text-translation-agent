@@ -1,5 +1,5 @@
-from translation_agent import *
-from utils import *
+from translation_agent import translate
+import os
 
 def is_excel_file(file_path):
     excel_extensions = ('.xlsx', '.xls', '.xlsm', '.xlsb', '.xltx', '.xltm')

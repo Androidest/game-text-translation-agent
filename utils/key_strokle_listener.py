@@ -1,6 +1,6 @@
 import keyboard 
 
-class keyStrokeListener:
+class KeyStrokeListener:
     def __init__(self):
         self.keys_pressed = set()
     

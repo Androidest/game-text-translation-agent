@@ -1,5 +1,5 @@
 #%% 
-from utils import *
+from utils import Sheet, PATH_DATA
 import jieba
 import json
 from tqdm import tqdm

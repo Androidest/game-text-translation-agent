@@ -1,7 +1,7 @@
 #%%
 from utils.sheet import Sheet
 from utils.structured_validating_agent import StructuredValidatingState
-from utils.key_strokle_listener import keyStrokeListener
+from utils.key_strokle_listener import KeyStrokeListener
 from langgraph.graph import StateGraph
 from tqdm import tqdm
 import asyncio
@@ -90,7 +90,7 @@ class ParallelSheetChunkDispatcher:
         self.output_sheet = output_sheet
         self.agent = agent
         self.desc = desc
-        self.key_checker = keyStrokeListener()
+        self.key_checker = KeyStrokeListener()
         self.key_checker.add_hotkey(exit_hot_key)
         self.exit_hot_key = exit_hot_key
 
