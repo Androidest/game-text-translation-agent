@@ -5,6 +5,7 @@ import numpy as np
 from pathlib import Path
 import torch
 import os
+from typing import Union, List, Tuple
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE" # An error might occur during faiss index searching
 
 TEXT_SHEET_PATH = PATH_DATA / "rag_text.xlsx"
@@ -27,7 +28,7 @@ class RAG:
         self.model = TextEmbModel(device=device)
         print(f"Model loaded on device:{self.model.device}")
 
-    def retrieve_sim(self, text: str):
+    def retrieve_sim(self, text: Union[str, List[str]]) -> Tuple[np.ndarray[np.ndarray[str]], np.ndarray[float]]:
         emb = self.model.get_text_emb(text)
         faiss.normalize_L2(emb) # for cosine similarity
         cos_sim, indexes = self.index.search(emb, k=1)

@@ -1,5 +1,5 @@
 TRANSLATION_INSTRUCTION = """你是专业的游戏文本翻译工具。输入是一个术语翻译表和多条游戏文本，参照术语翻译并对每条中文文本进行【西班牙语翻译】。
-#输入术语字典格式说明：
+#参考术语字典格式说明：
 1. 键为中文游戏术语（键：术语）。
 2. 值为对应术语的西班牙语翻译。可能会有多种翻译，是个字符串列表。（值：术语译文列表）。
 #输入原文字典格式说明：
@@ -14,6 +14,7 @@ TRANSLATION_INSTRUCTION = """你是专业的游戏文本翻译工具。输入是
 5. [重点]原文中的【四字词】都属于技能名，若不在术语表中，则需要按常规游戏技能名的风格起个【简化的技能名】，尽量使用高级词汇，【尽量省略介词】。
 6. 要保留原文的各种富文本样式，例如颜色、大小、加粗、斜体等。
 7. 要保留原文的特殊参数格式，例如{0}、{var1}等参数。
+8. [重点]如果有给出【参考类似过往翻译（RAG检索结果）】，则要严格参照过往的翻译规则进行翻译。
 #输出译文字典格式说明：
 1. 键是译文的索引，和原文索引一一对应（键：译文索引）。
 2. 值是对应原文的西班牙语翻译（值：译文）。
@@ -21,7 +22,9 @@ TRANSLATION_INSTRUCTION = """你是专业的游戏文本翻译工具。输入是
 4. [重点]每条译文都有其对应的原文样本，并且和原文一样的索引号，【顺序不能乱】。
 
 #例如:
-##输入术语字典：
+##参考类似过往翻译（RAG检索结果）：
+无
+##参考术语字典：
 {"天梯门票": ["Ticket del Escalón", "Ticket del Láderas"], "花灵碎片": ["Fragmento de Hada Floral"], "级": ["Nv."], "史诗": ["Épico"]}
 ##输入原文字典：
 {"0": "#585天梯门票不足\n是否消耗{0}购买#585 1", "1": "史诗花灵碎片·地", "2": "大量的1级结晶，属性类型随机"}
@@ -30,14 +33,16 @@ TRANSLATION_INSTRUCTION = """你是专业的游戏文本翻译工具。输入是
 {
     "translations": 
     {
-        "0": "Ticket de Escalón #585 insuficiente\n¿Deseas consumir {0} para comprar 1 #585?", 
-        "1": "Fragmento de Hada Floral Épica - Tierra", 
+        "0": "Ticket de Escalón #585 insuficiente\n¿Deseas consumir {0} para comprar 1 #585?",
+        "1": "Fragmento de Hada Floral Épica - Tierra",
         "2": "Cantidad grande de Cristales Nv.1 de un atributo aleatorio."
     }
 }
 """
 
-INPUT_PROMPT_TEMPLATE = """##输入术语字典：
+INPUT_PROMPT_TEMPLATE = """##参考类似过往翻译（RAG检索结果）：
+{rag_translations}
+##参考术语字典：
 {term_dict}
 ##输入原文字典：
 {cn_dict}

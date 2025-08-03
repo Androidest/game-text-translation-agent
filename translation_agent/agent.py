@@ -2,17 +2,34 @@
 from translation_agent.promtps import *
 from utils import StructuredValidatingState, create_structured_validating_agent, deepseek
 from pydantic import BaseModel, Field
-from typing import Dict, List
+from typing import Dict, List, Optional
+import numpy as np
 import json
 
 class TranslationInputSchema(BaseModel):
-    term_dict: Dict[str, List[str]] = Field(description="术语字典")
-    cn_dict: Dict[str, str] = Field(description="中文原文字典")
+    rag_translations: Optional[List[List[str]]] = Field(description="参考类似过往翻译（RAG检索结果）")
+    term_dict: Dict[str, List[str]] = Field(description="参考术语字典")
+    cn_dict: Dict[str, str] = Field(description="输入中文原文字典")
+    
+    rag_result: Optional[List[List[str]]] = Field(description="RAG检索结果")
+    cos_sim: Optional[List[float]] = Field(description="RAG检索结果的余弦相似度")
+
     def to_prompt(self):
         return INPUT_PROMPT_TEMPLATE.format(
+            rag_translations=self.rag_text(),
             term_dict=json.dumps(self.term_dict, ensure_ascii=False),
             cn_dict=json.dumps(self.cn_dict, ensure_ascii=False),
         )
+    
+    def rag_text(self):
+        if not self.rag_translations or len(self.rag_translations) == 0:
+            rag_text = "无"
+        else:
+            rag_text = ""
+            for src, translation in self.rag_translations:
+                rag_text += f"[*] {src} -> {translation}\n"
+            rag_text = rag_text.strip()
+        return rag_text
 
 class TranslationOutputSchema(BaseModel):
     translations: Dict[str, str] = Field(description="键：索引号，对应原文索引号。值：西班牙语翻译")

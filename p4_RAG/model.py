@@ -8,7 +8,7 @@ MODEL_PATH = PATH_PROJECT_ROOT / "p4_RAG" / "chinese-macbert-base"
 
 class TextEmbModel:
     def __init__(self, device="cuda" if torch.cuda.is_available() else "cpu"):
-        print("Loading model...")
+        print(f"Loading Text Embedding Model: {MODEL_PATH} ...")
         self.max_length = 300
         self.device = device
         self.emb_size = AutoConfig.from_pretrained(MODEL_PATH).hidden_size
