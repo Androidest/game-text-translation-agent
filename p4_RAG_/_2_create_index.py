@@ -1,4 +1,4 @@
-from P4_RAG.model import TextEmbModel
+from p4_RAG.model import TextEmbModel
 from utils import PATH_DATA, Sheet
 import numpy as np
 from tqdm import tqdm

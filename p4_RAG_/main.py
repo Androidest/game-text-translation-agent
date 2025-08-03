@@ -1,5 +1,5 @@
 from utils import Sheet, PATH_DATA
-from P4_RAG.model import TextEmbModel
+from p4_RAG.model import TextEmbModel
 import faiss
 import numpy as np
 from pathlib import Path

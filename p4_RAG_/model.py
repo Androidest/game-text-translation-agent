@@ -4,7 +4,7 @@ import torch
 from typing import Union, List
 import numpy as np
 
-MODEL_PATH = PATH_PROJECT_ROOT / "P4_RAG" / "chinese-macbert-base"
+MODEL_PATH = PATH_PROJECT_ROOT / "p4_RAG" / "chinese-macbert-base"
 
 class TextEmbModel:
     def __init__(self, device="cuda" if torch.cuda.is_available() else "cpu"):
