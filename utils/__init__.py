@@ -4,7 +4,7 @@ from .llms import deepseek
 from .key_strokle_listener import KeyStrokeListener
 from .parallel_sheet_chunking import ParallelSheetChunksIterator, ParallelSheetChunkDispatcher
 from .path import PATH_PROJECT_ROOT, PATH_DATA
-from .tools import use_proxy
+from .tools import use_proxy, capitalize_first_char
 
 __all__ = [
     "Sheet",
@@ -18,4 +18,5 @@ __all__ = [
     "PATH_PROJECT_ROOT",
     "PATH_DATA",
     "use_proxy",
+    "capitalize_first_char",
 ]
