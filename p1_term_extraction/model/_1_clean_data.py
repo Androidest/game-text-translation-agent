@@ -1,19 +1,19 @@
 #%%
 from utils import *
 from tqdm import tqdm
-from p4_RAG.model import TextEmbModel
+from p4_RAG import TextEmbModel
 
-INPUT_PATH = PATH_DATA / "term_extraction.final.xlsx"
-OUTPUT_PATH = PATH_DATA / "term_extraction.final.cleaned.xlsx"
-FILTERED_PATH = PATH_DATA / "filtered.xlsx"
+INPUT_PATH = PATH_DATA / "game_lang_dataset_cleaned.xlsx"
+TERM_SCORE_FINAL_PATH = PATH_DATA / "term_score.final.xlsx"
+OUTPUT_PATH = PATH_DATA / "term_extraction_ds.xlsx"
 
-src = Sheet(INPUT_PATH)
-cleaned = Sheet(OUTPUT_PATH, default_data={ "CN": [], "TERMS": [], "ES": [] }, clear=True)
-filtered_sheet = Sheet(FILTERED_PATH, conlumns=["TERMS", "SIMILAR", "DIFF"], clear=True)
+src_sheet = Sheet(INPUT_PATH)
+term_sheet = Sheet(TERM_SCORE_FINAL_PATH)
+output_sheet = Sheet(OUTPUT_PATH, default_data={ "CN": [], "TERMS": [], "SIMILAR": [] }, clear=True)
 text_emb_model = TextEmbModel()
 
 terms_dict = {}
-for i, (cn, terms, es) in enumerate(tqdm(src, desc="Cleaning Data:")):
+for i, (cn, terms, es) in enumerate(tqdm(src_sheet, desc="Cleaning Data:")):
     if terms == "[]":
         continue
     
@@ -27,7 +27,7 @@ for i, (cn, terms, es) in enumerate(tqdm(src, desc="Cleaning Data:")):
     else:
         terms_dict[terms] = { "SIMILAR": [cn], "DIFF": [] }
 
-    cleaned.append({ "CN": cn, "TERMS": terms, "ES": es })
+    output_sheet.append({ "CN": cn, "TERMS": terms, "ES": es })
 
 for terms, cns in terms_dict.items():
     if len(cns["SIMILAR"]) > 1 or len(cns["DIFF"]) > 1:
@@ -37,7 +37,7 @@ for terms, cns in terms_dict.items():
             "DIFF": "\n".join(cns["DIFF"])
         })
 
-cleaned.save()
+output_sheet.save()
 filtered_sheet.save()
-print(f"Done! Total samples after cleaning: {len(cleaned)}")
+print(f"Done! Total samples after cleaning: {len(output_sheet)}")
 print(f"Saved to file {OUTPUT_PATH}")

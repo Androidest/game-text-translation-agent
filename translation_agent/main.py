@@ -5,7 +5,6 @@ import json
 from p3_term_retrieval import TermRetriever
 from pathlib import Path
 from p4_RAG import RAG
-import pdb
 
 class TermExtractorChunkDispatcher(ParallelSheetChunkDispatcher):
     use_rag = True

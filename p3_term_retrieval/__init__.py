@@ -1,3 +1,3 @@
-from .matching_based_retriever import TermRetriever
+from .main import TermRetriever
 
 __all__ = ["TermRetriever"]

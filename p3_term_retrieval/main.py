@@ -1,24 +1,14 @@
 #%% 
-from utils import Sheet, PATH_DATA
-import jieba
+from utils import PATH_DATA
+from p1_term_extraction import TokenizerBasedTermExtractor
 import json
-from tqdm import tqdm
 
 TERM_ALIGNMENT_PATH = PATH_DATA / "term_alignment.merged.final.xlsx"
 
-class TermRetriever:
-    def __init__(self, 
-            term_alignment_path=TERM_ALIGNMENT_PATH,
-        ):
-        self.tokenizer = jieba.Tokenizer()
-        self.tokenizer.FREQ = {}
-        self.terms_sheet = Sheet(term_alignment_path)
-        for i in tqdm(range(len(self.terms_sheet)), desc="Loading Terms:"):
-            self.tokenizer.add_word(
-                word=self.terms_sheet[i, "TERM"],
-                freq=self.terms_sheet[i, "SCORE"]
-            )
-        self.terms_sheet.dataframe.set_index("TERM", inplace=True)
+class TermRetriever(TokenizerBasedTermExtractor):
+
+    def __init__(self, term_alignment_path=TERM_ALIGNMENT_PATH):
+        super().__init__(term_alignment_path)
             
     def retrieve(self, text):
         terms = {}
