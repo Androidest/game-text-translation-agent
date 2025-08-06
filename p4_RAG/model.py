@@ -47,6 +47,11 @@ class TextEmbModel:
         
         x = self.tokenizer.tokenize(text, add_special_tokens=True)
         return len(x)
+    
+    def cosine_similarity(self, text1:str, text2:str) -> float:
+        emb1 = self.get_text_emb(text1).reshape(-1)
+        emb2 = self.get_text_emb(text2).reshape(-1)
+        return np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2))
 
 if __name__ == "__main__":
     m = TextEmbModel()
