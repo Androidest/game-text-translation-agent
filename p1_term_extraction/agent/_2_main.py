@@ -1,5 +1,5 @@
 #%%
-from p1_term_extraction.agent import *
+from p1_term_extraction.agent.agent import *
 from utils import *
 import json
 

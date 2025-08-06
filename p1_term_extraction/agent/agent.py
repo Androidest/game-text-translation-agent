@@ -1,6 +1,6 @@
 #%%
 from utils import *
-from p1_term_extraction.promtps import *
+from p1_term_extraction.agent.promtps import *
 from pydantic import BaseModel, Field
 from typing import List
 
