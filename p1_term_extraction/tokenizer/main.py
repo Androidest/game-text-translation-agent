@@ -7,7 +7,6 @@ import re
 class TokenizerBasedTermExtractor:
     def __init__(self, term_score_sheet_path:str):
         self.tokenizer = jieba.Tokenizer()
-        self.tokenizer.FREQ = {}
         self.terms_sheet = Sheet(term_score_sheet_path)
         self.term_set = set()
         for i in tqdm(range(len(self.terms_sheet)), desc="Loading Terms:"):
@@ -44,5 +43,6 @@ if __name__ == "__main__":
     print(r.extract("<color=gold1>S13</color>级的史诗品质装备\\n随机获得(武器，头盔，手套）3个部位之一的升级材料"))
     print(r.extract("暴击-10%"))
     print(r.extract("<color=gold1>更新后，所有冒险者花灵编队的战力都会有不同程度的提升。</color>"))
-    print(r.extract("\+10%防御力,+5%伤害提高，对弱土怪物增加30%伤害"))
-    print(r.extract("\+5%暴击率，+10%暴击伤害，对弱火怪物增加30%伤害"))
+    print(r.extract("+10%防御力,+5%伤害提高，对弱土怪物增加30%伤害"))
+    print(r.extract("+5%暴击率，+10%暴击伤害，对弱火怪物增加30%伤害"))
+    print(r.extract("完成25级任务后开启"))

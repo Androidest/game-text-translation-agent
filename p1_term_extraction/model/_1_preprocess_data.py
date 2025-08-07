@@ -6,6 +6,7 @@ from p4_RAG import TextEmbModel
 import json
 import re
 import numpy as np
+import string
 
 TERM_SCORE_FINAL_PATH = PATH_DATA / "term_alignment.merged.final.xlsx"
 # TERM_SCORE_FINAL_PATH = PATH_DATA / "term_score.xlsx"
@@ -14,17 +15,24 @@ OUTPUT_PATH = PATH_DATA / "term_extraction_ds.xlsx"
 MIN_LEN = 4
 MAX_LEN = 128
 MIN_COS_SIM = 0.97
+EN_PUNCTATION = string.punctuation
+CN_PUNCTATION = '。，、；：？！…—·ˉ¨‘’“”『』〖〗【】±×÷∶∫∬∭∮∇∆∈∋∝∞∧∨∑∏∪∩∈∉∌⊂⊃⊆⊇≤≥≦≧≡≢≈≒≠≡≤≥＜＞≮≯∷√∛∜∫∬∭∮∇∆∏∑∈∋∝∞∧∨∩∪∅∀∃∄∇∆∏∑∫∬∭∮∴∵∶∷∽∝≅≌≈≒≠≡≤≥＜＞≮≯⊂⊃⊆⊇∈∉∌'
 text_emb_model = TextEmbModel()
 term_extract_tokenizer = TokenizerBasedTermExtractor(TERM_SCORE_FINAL_PATH)
 
 def extract_terms(text:str):
     extra_terms = re.findall(r'[「【\[](.*?)[\]】」]', text)
     for term in extra_terms:
+        # remove any digits
         term = re.sub(r'\d', '', term)
+        # do not contain any punctation nor 'var' and length <= 6
         if term != '' and \
             len(term) <= 6 and \
-            not bool(re.search(r'var|{|}', term)):
-            term_extract_tokenizer.add(term)
+            not bool(re.search(f"[{re.escape(EN_PUNCTATION+CN_PUNCTATION)}]|var", term)):
+            # not a stop-word nor an existing term
+            if term not in term_extract_tokenizer.tokenizer.FREQ: 
+                term_extract_tokenizer.add(term)
+
     return term_extract_tokenizer.extract(text)
 
 def split_text(text, max_len:int=128):
