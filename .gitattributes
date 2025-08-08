@@ -1,1 +1,2 @@
 saved_models/chinese-macbert-base/* filter=lfs diff=lfs merge=lfs -text
+saved_models/fine-tuned-macbert-game-term-ner/* filter=lfs diff=lfs merge=lfs -text
