@@ -1,10 +1,10 @@
 from transformers import AutoTokenizer, AutoModel, AutoConfig
-from utils import PATH_PROJECT_ROOT
+from utils import PATH_MODELS
 import torch
 from typing import Union, List
 import numpy as np
 
-MODEL_PATH = PATH_PROJECT_ROOT / "p4_RAG" / "chinese-macbert-base"
+MODEL_PATH = PATH_MODELS / "chinese-macbert-base"
 
 class TextEmbModel:
     def __init__(self, device="cuda" if torch.cuda.is_available() else "cpu"):
@@ -55,4 +55,4 @@ class TextEmbModel:
 
 if __name__ == "__main__":
     m = TextEmbModel()
-    print(m.count_tokens("统计"))
+    print(m.get_text_emb("统计"))
