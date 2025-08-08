@@ -56,6 +56,20 @@ def split_text(text, max_len:int=128):
 
     return texts
 
+def create_BI_label(text:str, terms_json:str):
+    label = ["O"] * len(text)
+
+    if terms_json != "[]":
+        start = 0
+        terms = json.loads(terms_json)
+        for term in terms:
+            start = text.find(sub=term, start=start)
+            end = start + len(term)
+            label[start:end] = ["B"] + ["I"] * (len(term) - 1)
+            start = end
+
+    return "".join(label)
+
 class SimTextGroups:
     def __init__(self):
         self.groups = []
@@ -75,7 +89,7 @@ class SimTextGroups:
 
 def process_ds():
     input_sheet = Sheet(INPUT_PATH)
-    output_sheet = Sheet(OUTPUT_PATH, conlumns=["CN", "TERMS", "SIMILAR"], clear=True)
+    output_sheet = Sheet(OUTPUT_PATH, conlumns=["CN", "TERMS", "BI_LABEL", "SIMILAR"], clear=True)
 
     term_dict = {}
     for i in tqdm(range(len(input_sheet)), desc="Processing Data:"):
@@ -93,7 +107,8 @@ def process_ds():
         for g in sim_groups.groups:
             _, text = g[0]
             sims = "\n".join([t for emb, t in g[1:]]) if len(g) > 1 else ""
-            output_sheet.append({ "CN": text, "TERMS": terms_json, "SIMILAR": sims })
+            label = create_BI_label(text, terms_json)
+            output_sheet.append({ "CN": text, "TERMS": terms_json, "BI_LABEL": label, "SIMILAR": sims })
 
     print(f"Writing to file {OUTPUT_PATH}")
     output_sheet.save()
