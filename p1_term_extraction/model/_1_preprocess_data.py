@@ -7,11 +7,14 @@ import json
 import re
 import numpy as np
 import string
+from pathlib import Path
 
 TERM_SCORE_FINAL_PATH = PATH_DATA / "term_alignment.merged.final.xlsx"
 # TERM_SCORE_FINAL_PATH = PATH_DATA / "term_score.xlsx"
-INPUT_PATH = PATH_DATA / "game_lang_dataset_cleaned.xlsx"
-OUTPUT_PATH = PATH_DATA / "term_extraction_ds.xlsx"
+INPUT_TRAIN_PATH = PATH_DATA / "game_lang_dataset_cleaned.xlsx"
+OUTPUT_TRAIN_PATH = PATH_DATA / "term_extraction_train.xlsx"
+INPUT_TEST_PATH = PATH_DATA / "test.xlsx"
+OUTPUT_TEST_PATH = PATH_DATA / "term_extraction_test.xlsx"
 MIN_LEN = 4
 MAX_LEN = 128
 MIN_COS_SIM = 0.97
@@ -63,7 +66,7 @@ def create_BI_label(text:str, terms_json:str):
         start = 0
         terms = json.loads(terms_json)
         for term in terms:
-            start = text.find(sub=term, start=start)
+            start = text.find(term, start)
             end = start + len(term)
             label[start:end] = ["B"] + ["I"] * (len(term) - 1)
             start = end
@@ -87,9 +90,9 @@ class SimTextGroups:
 
         self.groups.append([pair])
 
-def process_ds():
-    input_sheet = Sheet(INPUT_PATH)
-    output_sheet = Sheet(OUTPUT_PATH, conlumns=["CN", "TERMS", "BI_LABEL", "SIMILAR"], clear=True)
+def process_ds(input_path:Path, output_path:Path):
+    input_sheet = Sheet(input_path)
+    output_sheet = Sheet(output_path, conlumns=["CN", "TERMS", "BI_LABEL", "SIMILAR"], clear=True)
 
     term_dict = {}
     for i in tqdm(range(len(input_sheet)), desc="Processing Data:"):
@@ -110,10 +113,11 @@ def process_ds():
             label = create_BI_label(text, terms_json)
             output_sheet.append({ "CN": text, "TERMS": terms_json, "BI_LABEL": label, "SIMILAR": sims })
 
-    print(f"Writing to file {OUTPUT_PATH}")
+    print(f"Writing to file {output_path}")
     output_sheet.save()
     print(f"Done! Total samples: {len(output_sheet)}")
-    print(f"Saved to file {OUTPUT_PATH}")
+    print(f"Saved to file {output_path}")
 
 if __name__ == "__main__":
-    process_ds()
+    process_ds(INPUT_TRAIN_PATH, OUTPUT_TRAIN_PATH)
+    process_ds(INPUT_TEST_PATH, OUTPUT_TEST_PATH)
