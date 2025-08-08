@@ -97,6 +97,9 @@ def process_ds(input_path:Path, output_path:Path):
     term_dict = {}
     for i in tqdm(range(len(input_sheet)), desc="Processing Data:"):
         cn = input_sheet[i, "CN"]
+        if not isinstance(cn, str) or cn == "":
+            continue
+
         for text in split_text(cn, MAX_LEN):
             terms = extract_terms(text)
             if len(terms) == 0 and len(text) < MIN_LEN:
@@ -120,4 +123,4 @@ def process_ds(input_path:Path, output_path:Path):
 
 if __name__ == "__main__":
     process_ds(INPUT_TRAIN_PATH, OUTPUT_TRAIN_PATH)
-    process_ds(INPUT_TEST_PATH, OUTPUT_TEST_PATH)
+    # process_ds(INPUT_TEST_PATH, OUTPUT_TEST_PATH)
