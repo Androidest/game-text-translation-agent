@@ -59,7 +59,7 @@ def train_encoder() -> Trainer:
     tokenizer:GameTermBertTokenizer = GameTermBertTokenizer.from_pretrained(MODEL_PATH)
 
     sheet_train = Sheet(TRAIN_SHEET_PATH)
-    ds_train = GameTermNERDataset(tokenizer, sheet_train, start=20000)
+    ds_train = GameTermNERDataset(tokenizer, sheet_train)
     print(f"ds_train len: {len(ds_train)}, seq_len:{len(ds_train[0]["input_ids"])}")
 
     sheet_test = Sheet(TEST_SHEET_PATH)
@@ -80,9 +80,9 @@ def train_encoder() -> Trainer:
         greater_is_better=True,       # F1 is greater better
         load_best_model_at_end=True,
         
-        num_train_epochs=2,
-        per_device_train_batch_size=4,
-        per_device_eval_batch_size=4,
+        num_train_epochs=5,
+        per_device_train_batch_size=64,
+        per_device_eval_batch_size=256,
         optim="adamw_torch",
         weight_decay=1e-2,
         learning_rate=1e-5,
