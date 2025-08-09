@@ -210,3 +210,4 @@ data/*
 .vscode/
 data.zip
 */**/logs
+*/**/checkpoint*
