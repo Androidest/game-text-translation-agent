@@ -44,18 +44,18 @@ def split_text(text, max_len:int=128):
     
     texts = []
     cur_text = ""
-    reg = r'([？?！!。.…\)\n\\n”])'
+    reg = r'([？?！!，,。\.…\)\n”]|\\n)'
     reg_text = f"{reg}"
     for t in re.split(reg, text):
         new_text = cur_text + t
         if len(new_text) <= max_len or t in reg_text or cur_text == "" or t == '\n':
             cur_text = new_text
         else:
-            texts.append(cur_text)
+            texts.append(cur_text[:max_len])
             cur_text = t
     
     if cur_text != "":
-        texts.append(cur_text)
+        texts.append(cur_text[:max_len])
 
     return texts
 
@@ -123,4 +123,4 @@ def process_ds(input_path:Path, output_path:Path):
 
 if __name__ == "__main__":
     process_ds(INPUT_TRAIN_PATH, OUTPUT_TRAIN_PATH)
-    # process_ds(INPUT_TEST_PATH, OUTPUT_TEST_PATH)
+    process_ds(INPUT_TEST_PATH, OUTPUT_TEST_PATH)
