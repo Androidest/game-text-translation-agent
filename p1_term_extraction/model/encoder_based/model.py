@@ -178,6 +178,7 @@ class GameTermBert(BertPreTrainedModel):
         input_ids: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         labels: Optional[torch.Tensor] = None,
+        num_items_in_batch: Optional[bool] = None,
         **kargs,
     ) -> SequenceClassifierOutput:
         
