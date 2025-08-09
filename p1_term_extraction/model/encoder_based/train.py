@@ -5,6 +5,7 @@ from utils import PATH_DATA, PATH_MODELS, PATH_PROJECT_ROOT, Sheet
 from typing import *
 import numpy as np
 import pdb
+import datetime
 
 LOG_PATH = PATH_PROJECT_ROOT / "p1_term_extraction" / "model" / "logs" / "encoder-based"
 MODEL_PATH = PATH_MODELS / "chinese-macbert-base"
@@ -65,9 +66,10 @@ def train_encoder() -> Trainer:
     ds_test = GameTermNERDataset(tokenizer, sheet_test)
     print(f"ds_test len: {len(ds_test)}, seq_len:{len(ds_test[0]["input_ids"])}")
 
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     training_args = TrainingArguments(
         output_dir=SAVE_PATH,
-        logging_dir=LOG_PATH,
+        logging_dir=LOG_PATH / timestamp,
         logging_steps=10,
         eval_strategy=IntervalStrategy.STEPS,
         eval_steps=50,
@@ -79,8 +81,8 @@ def train_encoder() -> Trainer:
         load_best_model_at_end=True,
         
         num_train_epochs=2,
-        per_device_train_batch_size=64,
-        per_device_eval_batch_size=256,
+        per_device_train_batch_size=4,
+        per_device_eval_batch_size=4,
         optim="adamw_torch",
         weight_decay=1e-2,
         learning_rate=1e-5,
