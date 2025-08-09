@@ -110,7 +110,7 @@ def train_encoder() -> Trainer:
 
     BEST_MODEL_PATH = SAVE_PATH/'best'
     trainer.model.save_pretrained(BEST_MODEL_PATH)
-    trainer.tokenizer.save_pretrained(BEST_MODEL_PATH)
+    tokenizer.save_pretrained(BEST_MODEL_PATH)
     print(f"Best model saved to: {BEST_MODEL_PATH}")
 
     return trainer
