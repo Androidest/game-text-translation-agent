@@ -90,7 +90,7 @@ class SimTextGroups:
 
         self.groups.append([pair])
 
-def process_ds(input_path:Path, output_path:Path):
+def process_ds(input_path:Path, output_path:Path, is_test_ds:bool=False):
     input_sheet = Sheet(input_path)
     output_sheet = Sheet(output_path, conlumns=["CN", "TERMS", "BI_LABEL", "SIMILAR"], clear=True)
 
@@ -110,11 +110,16 @@ def process_ds(input_path:Path, output_path:Path):
             term_dict[terms_json].add(text)
 
     for terms_json, sim_groups in tqdm(term_dict.items(), desc="Saving Data:"):    
+        same_terms_count = 0
         for g in sim_groups.groups:
             _, text = g[0]
             sims = "\n".join([t for emb, t in g[1:]]) if len(g) > 1 else ""
             label = create_BI_label(text, terms_json)
             output_sheet.append({ "CN": text, "TERMS": terms_json, "BI_LABEL": label, "SIMILAR": sims })
+
+            same_terms_count += 1
+            if is_test_ds and same_terms_count >= 20:
+                break
 
     print(f"Writing to file {output_path}")
     output_sheet.save()
@@ -123,4 +128,4 @@ def process_ds(input_path:Path, output_path:Path):
 
 if __name__ == "__main__":
     process_ds(INPUT_TRAIN_PATH, OUTPUT_TRAIN_PATH)
-    process_ds(INPUT_TEST_PATH, OUTPUT_TEST_PATH)
+    process_ds(INPUT_TEST_PATH, OUTPUT_TEST_PATH, is_test_ds=True)
