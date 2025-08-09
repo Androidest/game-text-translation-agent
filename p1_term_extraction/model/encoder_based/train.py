@@ -58,7 +58,7 @@ def train_encoder() -> Trainer:
     tokenizer:GameTermBertTokenizer = GameTermBertTokenizer.from_pretrained(MODEL_PATH)
 
     sheet_train = Sheet(TRAIN_SHEET_PATH)
-    ds_train = GameTermNERDataset(tokenizer, sheet_train)
+    ds_train = GameTermNERDataset(tokenizer, sheet_train, start=20000)
     print(f"ds_train len: {len(ds_train)}, seq_len:{len(ds_train[0]["input_ids"])}")
 
     sheet_test = Sheet(TEST_SHEET_PATH)
@@ -68,9 +68,9 @@ def train_encoder() -> Trainer:
     training_args = TrainingArguments(
         output_dir=SAVE_PATH,
         logging_dir=LOG_PATH,
-        logging_steps=50,
+        logging_steps=10,
         eval_strategy=IntervalStrategy.STEPS,
-        eval_steps=300,
+        eval_steps=50,
         eval_accumulation_steps=1,   # [Important] To prevent gathering all predictions of the entire test set at once and making a single compute_metrics call. 
         save_strategy='best',
         save_total_limit=3,
@@ -78,12 +78,12 @@ def train_encoder() -> Trainer:
         greater_is_better=True,       # F1 is greater better
         load_best_model_at_end=True,
         
-        num_train_epochs=100,
-        per_device_train_batch_size=20,
-        per_device_eval_batch_size=40,
+        num_train_epochs=2,
+        per_device_train_batch_size=64,
+        per_device_eval_batch_size=256,
         optim="adamw_torch",
-        weight_decay=5e-3,
-        learning_rate=1e-4,
+        weight_decay=1e-2,
+        learning_rate=1e-5,
         warmup_ratio=0.1,
         lr_scheduler_type=SchedulerType.COSINE,
     )

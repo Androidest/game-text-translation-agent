@@ -170,7 +170,7 @@ class GameTermBert(BertPreTrainedModel):
     def __init__(self, config:BertConfig):
         super().__init__(config=config)
         self.bert = BertModel(config)
-        self.dropout = torch.nn.Dropout(0.1)
+        self.dropout = torch.nn.Dropout(0.3)
         self.classifier = torch.nn.Linear(config.hidden_size, len(LABEL_DICT))
 
     def forward(
