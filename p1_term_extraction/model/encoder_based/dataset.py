@@ -11,7 +11,7 @@ ModelInputDict = Dict[str, torch.Tensor]
 BIOffsetMap = List[Tuple[int,int]]
 
 class GameTermNERDataset(Dataset):
-    def __init__(self, tokenizer:GameTermBertTokenizer, sheet:Sheet, start:int=0, end:int=-1, return_terms:bool=False):
+    def __init__(self, tokenizer:GameTermBertTokenizer, sheet:Sheet, start:int=0, end:int=-1):
         if end == -1 or end > len(sheet):
             end = len(sheet)
 
@@ -27,24 +27,12 @@ class GameTermNERDataset(Dataset):
         self.attention_mask = np.array(x['attention_mask'])
         self.label_ids = np.array(label_ids)
 
-        self.return_terms = return_terms
-        if return_terms:
-            self.offset_mapping = np.array(x['offset_mapping'])
-            self.terms = []
-            for t in self.dataframe["TERMS"]:
-                self.terms.append(json.loads(t))
-
     def __getitem__(self, index) -> ModelInputDict:
         return {
             "input_ids":torch.from_numpy(self.input_ids[index]),
             "attention_mask":torch.from_numpy(self.attention_mask[index]),
             "labels":torch.from_numpy(self.label_ids[index]),
         }
-    
-    def get(self, index:int)-> Tuple[ModelInputDict, BIOffsetMap, TermList]:
-        if self.return_terms:
-            return self[index], self.offset_mapping[index], self.terms[index]
-        return self[index]
     
     def __len__(self) -> int:
         return len(self.dataframe)
@@ -55,7 +43,7 @@ if __name__ == "__main__":
 
     tokenizer = GameTermBertTokenizer.from_pretrained(MODEL_PATH)
     sheet = Sheet(DS_SHEET_PATH)
-    ds = GameTermNERDataset(tokenizer, sheet, return_terms=True)
+    ds = GameTermNERDataset(tokenizer, sheet)
 
     print(f"ds len: {len(ds)}")
     for batch in DataLoader(ds, batch_size=3, shuffle=True):
