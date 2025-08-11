@@ -115,6 +115,7 @@ class GameTermBertTokenizer(BertTokenizerFast):
                 cur_term = input_text[start:end]
             elif label_id == LABEL_DICT['I']:
                 if cur_term == "":
+                    continue
                     raise ValueError(f"Invalid label I in label_ids: {label_ids}")
                     #TODO check valid label id or ignore 
                 cur_term += input_text[start:end]
