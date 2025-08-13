@@ -20,10 +20,8 @@ MAX_LEN = 128
 MIN_COS_SIM = 0.97
 EN_PUNCTATION = string.punctuation
 CN_PUNCTATION = '。，、；：？！…—·ˉ¨‘’“”『』〖〗【】±×÷∶∫∬∭∮∇∆∈∋∝∞∧∨∑∏∪∩∈∉∌⊂⊃⊆⊇≤≥≦≧≡≢≈≒≠≡≤≥＜＞≮≯∷√∛∜∫∬∭∮∇∆∏∑∈∋∝∞∧∨∩∪∅∀∃∄∇∆∏∑∫∬∭∮∴∵∶∷∽∝≅≌≈≒≠≡≤≥＜＞≮≯⊂⊃⊆⊇∈∉∌'
-text_emb_model = TextEmbModel()
-term_extract_tokenizer = TokenizerBasedTermExtractor(TERM_SCORE_FINAL_PATH)
 
-def extract_terms(text:str):
+def extract_terms(text:str, term_extract_tokenizer:TokenizerBasedTermExtractor):
     extra_terms = re.findall(r'[「【\[](.*?)[\]】」]', text)
     for term in extra_terms:
         # remove any digits
@@ -77,7 +75,7 @@ class SimTextGroups:
     def __init__(self):
         self.groups = []
     
-    def add(self, text:str):
+    def add(self, text:str, text_emb_model:TextEmbModel):
         t_emb = text_emb_model.get_text_emb(re.sub(r'[\d\n(\\n)]', '', text)).reshape(-1)
         t_emb = t_emb / np.linalg.norm(t_emb)
         pair = (t_emb, text)
@@ -93,6 +91,8 @@ class SimTextGroups:
 def process_ds(input_path:Path, output_path:Path, is_test_ds:bool=False):
     input_sheet = Sheet(input_path)
     output_sheet = Sheet(output_path, conlumns=["CN", "TERMS", "BI_LABEL", "SIMILAR"], clear=True)
+    text_emb_model = TextEmbModel()
+    term_extract_tokenizer = TokenizerBasedTermExtractor(TERM_SCORE_FINAL_PATH)
 
     term_dict = {}
     for i in tqdm(range(len(input_sheet)), desc="Processing Data:"):
@@ -101,13 +101,13 @@ def process_ds(input_path:Path, output_path:Path, is_test_ds:bool=False):
             continue
 
         for text in split_text(cn, MAX_LEN):
-            terms = extract_terms(text)
+            terms = extract_terms(text, term_extract_tokenizer)
             if len(terms) == 0 and len(text) < MIN_LEN:
                 continue
             terms_json = json.dumps(terms, ensure_ascii=False)
             if terms_json not in term_dict:
                 term_dict[terms_json] = SimTextGroups()
-            term_dict[terms_json].add(text)
+            term_dict[terms_json].add(text, text_emb_model)
 
     for terms_json, sim_groups in tqdm(term_dict.items(), desc="Saving Data:"):    
         same_terms_count = 0
