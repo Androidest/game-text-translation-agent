@@ -1,3 +1,4 @@
+# Using the Token Classification approach with BIO tags is better for NER tasks with a encoder-only model(autoencoder model)
 from transformers import BertTokenizerFast, BertConfig, BertPreTrainedModel, BertModel
 from transformers.modeling_outputs import SequenceClassifierOutput
 from utils import PATH_MODELS, PATH_DATA, Sheet
