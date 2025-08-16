@@ -1,4 +1,4 @@
-from utils import PATH_DATA, PATH_MODELS, Sheet
+from utils import *
 from .model import GameTermBertTokenizer
 from torch.utils.data import Dataset, DataLoader
 import torch
@@ -38,7 +38,7 @@ class GameTermNERDataset(Dataset):
         return len(self.dataframe)
 
 if __name__ == "__main__":
-    MODEL_PATH = PATH_MODELS/'chinese-macbert-base'
+    MODEL_PATH = get_llm_local_path(ModelID.MACBERT_BASE)
     DS_SHEET_PATH = PATH_DATA/'term_extraction_train.xlsx'
 
     tokenizer = GameTermBertTokenizer.from_pretrained(MODEL_PATH)

@@ -1,13 +1,14 @@
 from transformers import AutoTokenizer, AutoModel, AutoConfig
-from utils import PATH_MODELS
+from utils import *
 import torch
 from typing import Union, List
 import numpy as np
 
-MODEL_PATH = PATH_MODELS / "chinese-macbert-base"
+MODEL_ID = ModelID.MACBERT_BASE
 
 class TextEmbModel:
     def __init__(self, device="cuda" if torch.cuda.is_available() else "cpu"):
+        MODEL_PATH = get_llm_local_path(MODEL_ID)
         print(f"Loading Text Embedding Model: {MODEL_PATH} ...")
         self.max_length = 300
         self.device = device

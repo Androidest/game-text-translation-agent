@@ -1,7 +1,7 @@
 # Using the Token Classification approach with BIO tags is better for NER tasks with a encoder-only model(autoencoder model)
 from transformers import BertTokenizerFast, BertConfig, BertPreTrainedModel, BertModel
 from transformers.modeling_outputs import SequenceClassifierOutput
-from utils import PATH_MODELS, PATH_DATA, Sheet
+from utils import *
 import torch
 from typing import List, Dict, Tuple, Optional, Union
 import numpy as np
@@ -208,7 +208,7 @@ class GameTermBert(BertPreTrainedModel):
         )
 
 if __name__ == "__main__":
-    MODEL_PATH = PATH_MODELS / "chinese-macbert-base"
+    MODEL_PATH = get_llm_local_path(ModelID.MACBERT_BASE)
     SAVE_PATH = PATH_MODELS / "fine-tuned-macbert-game-term-ner"
     sheet = Sheet(PATH_DATA/'term_extraction_train.xlsx')
     model:GameTermBert  = GameTermBert.from_pretrained(MODEL_PATH)

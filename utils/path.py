@@ -13,16 +13,23 @@ PATH_MODELS = PATH_PROJECT_ROOT / "saved_models"
 class ModelSrc(Enum):
     HUGGINGFACE = 0
     MODELSCOPE = 1
+    LOCAL = 2
 
 class ModelID(Enum):
-    LLAMA3_2 = "llama3.2-1b"
+    MACBERT_BASE = "chinese-macbert-base"
+    MACBERT_GAME_TERM = 'fine-tuned-macbert-game-term-ner'
     QWEN3 = "qwen3-0.6b"
     QWEN2_5 = "qwen2.5-0.5b"
 
 MODEL_MAPPINGS = {
-    ModelID.LLAMA3_2: {
-        ModelSrc.HUGGINGFACE: "meta-llama/Llama-3.2-1B-Instruct",
-        ModelSrc.MODELSCOPE: "LLM-Research/Llama-3.2-1B-Instruct"
+    ModelID.MACBERT_BASE: {
+        ModelSrc.HUGGINGFACE: "hfl/chinese-macbert-base",
+        ModelSrc.MODELSCOPE: "androidest/chinese-macbert-base"
+    },
+    ModelID.MACBERT_GAME_TERM: {
+        ModelSrc.HUGGINGFACE: None,
+        ModelSrc.MODELSCOPE: "androidest/macbert-game-term-ner",
+        ModelSrc.LOCAL: PATH_MODELS / 'fine-tuned-macbert-game-term-ner' / 'best'
     },
     ModelID.QWEN3: {
         ModelSrc.HUGGINGFACE: "Qwen/Qwen3-0.6B",
@@ -48,4 +55,6 @@ def get_llm_local_path(
         final_path = hf_download(routed_id)
     elif src == ModelSrc.MODELSCOPE:
         final_path = ms_download(routed_id)
+    elif src == ModelSrc.LOCAL:
+        final_path = routed_id
     return final_path

@@ -1,14 +1,14 @@
 from transformers import TrainingArguments, Trainer, IntervalStrategy, SchedulerType, EvalPrediction, TrainerControl, TrainerCallback, TrainerState
 from .model import GameTermBertTokenizer, GameTermBert
 from .dataset import GameTermNERDataset
-from utils import PATH_DATA, PATH_MODELS, PATH_PROJECT_ROOT, Sheet
+from utils import *
 from typing import *
 import numpy as np
 import pdb
 import datetime
 
+MODEL_ID = ModelID.MACBERT_BASE
 LOG_PATH = PATH_PROJECT_ROOT / "p1_term_extraction" / "model" / "logs" / "encoder-based"
-MODEL_PATH = PATH_MODELS / "chinese-macbert-base"
 SAVE_PATH = PATH_MODELS / "fine-tuned-macbert-game-term-ner"
 TRAIN_SHEET_PATH = PATH_DATA/'term_extraction_train.xlsx'
 TEST_SHEET_PATH = PATH_DATA/'term_extraction_test.xlsx'
@@ -55,6 +55,7 @@ class MetricsForGameTermBILabels:
         }
 
 def train_encoder() -> Trainer:
+    MODEL_PATH = get_llm_local_path(MODEL_ID)
     model:GameTermBert  = GameTermBert.from_pretrained(MODEL_PATH)
     tokenizer:GameTermBertTokenizer = GameTermBertTokenizer.from_pretrained(MODEL_PATH)
 
