@@ -8,7 +8,7 @@ MODEL_ID = ModelID.MACBERT_BASE
 
 class TextEmbModel:
     def __init__(self, device="cuda" if torch.cuda.is_available() else "cpu"):
-        MODEL_PATH = get_llm_local_path(MODEL_ID)
+        MODEL_PATH = get_model_local_path(MODEL_ID)
         print(f"Loading Text Embedding Model: {MODEL_PATH} ...")
         self.max_length = 300
         self.device = device

@@ -9,7 +9,7 @@ import datetime
 
 MODEL_ID = ModelID.MACBERT_BASE
 LOG_PATH = PATH_PROJECT_ROOT / "p1_term_extraction" / "model" / "logs" / "encoder-based"
-SAVE_PATH = PATH_MODELS / "fine-tuned-macbert-game-term-ner"
+SAVE_PATH = get_model_local_path(ModelID.MACBERT_GAME_TERM, ModelSrc.LOCAL)
 TRAIN_SHEET_PATH = PATH_DATA/'term_extraction_train.xlsx'
 TEST_SHEET_PATH = PATH_DATA/'term_extraction_test.xlsx'
 
@@ -55,7 +55,7 @@ class MetricsForGameTermBILabels:
         }
 
 def train_encoder() -> Trainer:
-    MODEL_PATH = get_llm_local_path(MODEL_ID)
+    MODEL_PATH = get_model_local_path(MODEL_ID)
     model:GameTermBert  = GameTermBert.from_pretrained(MODEL_PATH)
     tokenizer:GameTermBertTokenizer = GameTermBertTokenizer.from_pretrained(MODEL_PATH)
 
@@ -109,7 +109,7 @@ def train_encoder() -> Trainer:
         if key.startswith("eval_"):
             print(f"{key}: {score:.4f}")
 
-    BEST_MODEL_PATH = SAVE_PATH/'best'
+    BEST_MODEL_PATH = SAVE_PATH / 'best'
     trainer.model.save_pretrained(BEST_MODEL_PATH)
     tokenizer.save_pretrained(BEST_MODEL_PATH)
     print(f"Best model saved to: {BEST_MODEL_PATH}")

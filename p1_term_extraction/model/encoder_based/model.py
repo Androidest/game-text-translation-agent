@@ -208,7 +208,7 @@ class GameTermBert(BertPreTrainedModel):
         )
 
 if __name__ == "__main__":
-    MODEL_PATH = get_llm_local_path(ModelID.MACBERT_BASE)
+    MODEL_PATH = get_model_local_path(ModelID.MACBERT_BASE)
     SAVE_PATH = PATH_MODELS / "fine-tuned-macbert-game-term-ner"
     sheet = Sheet(PATH_DATA/'term_extraction_train.xlsx')
     model:GameTermBert  = GameTermBert.from_pretrained(MODEL_PATH)

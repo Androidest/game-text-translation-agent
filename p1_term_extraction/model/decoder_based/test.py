@@ -25,7 +25,7 @@ NO_THINKING_PROMPT = """\
 
 if __name__ == "__main__":
     from modelscope.hub.snapshot_download import snapshot_download
-    MODEL_PATH = get_llm_local_path(ModelID.QWEN3)
+    MODEL_PATH = get_model_local_path(ModelID.QWEN3)
     DEVICE = 'cuda:0'
 
     model = AutoModelForCausalLM.from_pretrained(MODEL_PATH)

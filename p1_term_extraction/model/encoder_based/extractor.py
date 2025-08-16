@@ -1,21 +1,20 @@
 from p1_term_extraction.model.encoder_based.model import GameTermBertTokenizer, GameTermBert
 from p1_term_extraction.model.data_preprocessing import split_text
-from utils import PATH_DATA, PATH_MODELS, Sheet
+from utils import *
 from typing import *
-from pathlib import Path
 import torch
 
-SAVE_PATH = PATH_MODELS / "fine-tuned-macbert-game-term-ner" / "best"
 TermList = List[str]
 
 class EncoderBasedTermExtractor:
     def __init__(
             self, 
-            model_path:Path=SAVE_PATH, 
+            model_id:ModelID = ModelID.MACBERT_GAME_TERM, 
             device:torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu"),
         ):
 
         self.device = device
+        model_path = get_model_local_path(model_id, ModelSrc.MODELSCOPE)
         self.tokenizer = GameTermBertTokenizer.from_pretrained(model_path)
         self.model  = GameTermBert.from_pretrained(model_path)
         self.model.eval()

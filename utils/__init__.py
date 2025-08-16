@@ -3,7 +3,7 @@ from .structured_validating_agent import StructuredValidatingState, create_struc
 from .llms import deepseek
 from .key_strokle_listener import KeyStrokeListener
 from .parallel_sheet_chunking import ParallelSheetChunksIterator, ParallelSheetChunkDispatcher
-from .path import PATH_PROJECT_ROOT, PATH_DATA, PATH_MODELS, ModelSrc, ModelID, get_llm_local_path
+from .path import PATH_PROJECT_ROOT, PATH_DATA, PATH_MODELS, ModelSrc, ModelID, get_model_local_path
 from .tools import use_proxy, capitalize_first_char
 
 __all__ = [
@@ -22,5 +22,5 @@ __all__ = [
     "capitalize_first_char",
     "ModelID",
     "ModelSrc",
-    "get_llm_local_path",
+    "get_model_local_path",
 ]

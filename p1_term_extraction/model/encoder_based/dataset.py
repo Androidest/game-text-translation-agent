@@ -38,7 +38,7 @@ class GameTermNERDataset(Dataset):
         return len(self.dataframe)
 
 if __name__ == "__main__":
-    MODEL_PATH = get_llm_local_path(ModelID.MACBERT_BASE)
+    MODEL_PATH = get_model_local_path(ModelID.MACBERT_BASE)
     DS_SHEET_PATH = PATH_DATA/'term_extraction_train.xlsx'
 
     tokenizer = GameTermBertTokenizer.from_pretrained(MODEL_PATH)

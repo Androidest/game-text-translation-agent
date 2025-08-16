@@ -29,7 +29,7 @@ MODEL_MAPPINGS = {
     ModelID.MACBERT_GAME_TERM: {
         ModelSrc.HUGGINGFACE: None,
         ModelSrc.MODELSCOPE: "androidest/macbert-game-term-ner",
-        ModelSrc.LOCAL: PATH_MODELS / 'fine-tuned-macbert-game-term-ner' / 'best'
+        ModelSrc.LOCAL: PATH_MODELS / 'fine-tuned-macbert-game-term-ner'
     },
     ModelID.QWEN3: {
         ModelSrc.HUGGINGFACE: "Qwen/Qwen3-0.6B",
@@ -45,10 +45,15 @@ DEFAULT_MODEL_SRC = ModelSrc.HUGGINGFACE
 if os.getenv('MODEL_SRC'):
     DEFAULT_MODEL_SRC = ModelSrc[os.getenv('MODEL_SRC')]
 
-def get_llm_local_path(
+def get_model_local_path(
     model_id: ModelID,
     src: ModelSrc = DEFAULT_MODEL_SRC,
 ):
+    if model_id not in MODEL_MAPPINGS:
+        raise KeyError(f"Invalid model ID '{model_id}'.")
+    if src not in MODEL_MAPPINGS[model_id]:
+        raise KeyError(f"Invalid model source '{src}' for model ID '{model_id}'.")
+
     routed_id = MODEL_MAPPINGS[model_id][src]
 
     if src == ModelSrc.HUGGINGFACE:
@@ -57,4 +62,5 @@ def get_llm_local_path(
         final_path = ms_download(routed_id)
     elif src == ModelSrc.LOCAL:
         final_path = routed_id
+        
     return final_path
