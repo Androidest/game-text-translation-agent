@@ -2,6 +2,7 @@
 from utils import PATH_DATA
 from p1_term_extraction import TokenizerBasedTermExtractor
 import json
+import pdb
 
 TERM_ALIGNMENT_PATH = PATH_DATA / "term_alignment.merged.final.xlsx"
 
@@ -15,8 +16,12 @@ class TermRetriever(TokenizerBasedTermExtractor):
         for word in self.tokenizer.cut(text):
             if word not in terms \
                 and word in self.term_set \
-                and word in self.terms_sheet.dataframe.index \
-                and self.terms_sheet[word, "TERM_ES"] and self.terms_sheet[word, "TERM_ES"] != "":
+                and word in self.terms_sheet.dataframe.index:
+                trans = self.terms_sheet[word, "TERM_ES"]
+                if not isinstance(trans, str):
+                    raise ValueError(f"Duplicate Term Translation for [{word}]:\n{self.terms_sheet[word, "TERM_ES"]}")
+                if trans == "":
+                    continue
                 terms[word] = json.loads(self.terms_sheet[word, "TERM_ES"])
         return terms
     
