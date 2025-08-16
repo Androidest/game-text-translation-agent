@@ -1,5 +1,5 @@
-from transformers import Qwen3ForCausalLM, Qwen2TokenizerFast, Qwen3ForTokenClassification
-from utils import PATH_MODELS
+from transformers import Qwen2ForCausalLM, Qwen2TokenizerFast, Qwen3ForTokenClassification, AutoModelForCausalLM, AutoTokenizer
+from utils import *
 import pdb
 
 SYS_PROMPT = "提取文中的游戏名词和术语，返回JSON列表"
@@ -24,10 +24,14 @@ NO_THINKING_PROMPT = """\
 [\""""
 
 if __name__ == "__main__":
-    MODEL_PATH = PATH_MODELS / 'qwen3-0.6b-instruct'
+    from modelscope.hub.snapshot_download import snapshot_download
+    MODEL_PATH = get_llm_local_path(ModelID.QWEN3)
     DEVICE = 'cuda:0'
-    model:Qwen3ForCausalLM = Qwen3ForCausalLM.from_pretrained(MODEL_PATH)
-    tokenizer:Qwen2TokenizerFast = Qwen2TokenizerFast.from_pretrained(MODEL_PATH)
+
+    model = AutoModelForCausalLM.from_pretrained(MODEL_PATH)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
+    print("Model Type:", type(model))
+    print("Tokenizer Type:", type(tokenizer))
     model.to(DEVICE)
 
     gen_config = model.generation_config
