@@ -35,7 +35,6 @@ def save_lora(base_model, lora_path):
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
         inference_mode=True,
     )
-    pdb.set_trace()
     lora_model = get_peft_model(model=base_model, peft_config=peft_config)
     lora_model.save_pretrained(lora_path)
 
