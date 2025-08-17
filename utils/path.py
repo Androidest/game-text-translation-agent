@@ -20,6 +20,7 @@ class ModelID(Enum):
     MACBERT_GAME_TERM = 'fine-tuned-macbert-game-term-ner'
     QWEN3 = "qwen3-0.6b"
     QWEN2_5 = "qwen2.5-0.5b"
+    QWEN3_LORA = "qwen3-0.6b-lora"
 
 MODEL_MAPPINGS = {
     ModelID.MACBERT_BASE: {
@@ -27,9 +28,7 @@ MODEL_MAPPINGS = {
         ModelSrc.MODELSCOPE: "androidest/chinese-macbert-base"
     },
     ModelID.MACBERT_GAME_TERM: {
-        ModelSrc.HUGGINGFACE: None,
         ModelSrc.MODELSCOPE: "androidest/macbert-game-term-ner",
-        ModelSrc.LOCAL: PATH_MODELS / 'fine-tuned-macbert-game-term-ner'
     },
     ModelID.QWEN3: {
         ModelSrc.HUGGINGFACE: "Qwen/Qwen3-0.6B",
@@ -38,7 +37,10 @@ MODEL_MAPPINGS = {
     ModelID.QWEN2_5: {
         ModelSrc.HUGGINGFACE: "Qwen/Qwen2.5-0.5B-Instruct",
         ModelSrc.MODELSCOPE: "Qwen/Qwen2.5-0.5B-Instruct"
-    }
+    },
+    ModelID.QWEN3_LORA: {
+        ModelSrc.MODELSCOPE: "androidest/Qwen3-0.6B-game-term-lora",
+    },
 }
 
 DEFAULT_MODEL_SRC = ModelSrc.HUGGINGFACE
@@ -51,16 +53,16 @@ def get_model_local_path(
 ):
     if model_id not in MODEL_MAPPINGS:
         raise KeyError(f"Invalid model ID '{model_id}'.")
-    if src not in MODEL_MAPPINGS[model_id]:
+    if src not in MODEL_MAPPINGS[model_id] and src != ModelSrc.LOCAL:
         raise KeyError(f"Invalid model source '{src}' for model ID '{model_id}'.")
 
-    routed_id = MODEL_MAPPINGS[model_id][src]
-
     if src == ModelSrc.HUGGINGFACE:
+        routed_id = MODEL_MAPPINGS[model_id][src]
         final_path = hf_download(routed_id)
     elif src == ModelSrc.MODELSCOPE:
+        routed_id = MODEL_MAPPINGS[model_id][src]
         final_path = ms_download(routed_id)
     elif src == ModelSrc.LOCAL:
-        final_path = routed_id
+        final_path = PATH_MODELS / model_id.value
         
     return final_path
