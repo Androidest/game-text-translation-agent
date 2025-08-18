@@ -1,7 +1,6 @@
-from transformers import TrainingArguments, Trainer, IntervalStrategy, SchedulerType, EvalPrediction, TrainerControl, TrainerCallback, TrainerState
+from transformers import AutoModelForCausalLM, TrainingArguments, Trainer, IntervalStrategy, SchedulerType, EvalPrediction, TrainerControl, TrainerCallback, TrainerState
 from .model import QwenGameTermTokenizer, QwenGameTermLoraModel
 from .dataset import GameTermGenDataset
-from transformers import AutoModelForCausalLM
 from utils import *
 from typing import *
 import numpy as np
@@ -87,13 +86,15 @@ def train_decoder() -> Trainer:
         metric_for_best_model="f1",   # Return from compute_metrics()
         greater_is_better=True,       # F1 is greater better
         load_best_model_at_end=True,
+        label_names=["labels"],
         
-        num_train_epochs=5,
+        num_train_epochs=3,
         per_device_train_batch_size=1,
         per_device_eval_batch_size=1,
+        gradient_accumulation_steps=4,
         optim="adamw_torch",
-        weight_decay=1e-3,
-        learning_rate=1e-5,
+        weight_decay=1e-4,
+        learning_rate=1e-4,
         warmup_ratio=0.1,
         lr_scheduler_type=SchedulerType.COSINE,
     )

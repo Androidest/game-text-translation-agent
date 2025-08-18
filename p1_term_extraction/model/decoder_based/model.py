@@ -1,6 +1,6 @@
 # Using the Seq2Seq generative approach is better for term extraction tasks with a decoder-only model(auto-regressive model)
 from peft import PeftModelForCausalLM, LoraConfig, PeftConfig
-from transformers import Qwen2TokenizerFast
+from transformers import Qwen2TokenizerFast, Qwen3ForCausalLM
 from utils import *
 from typing import Union, List
 import torch
@@ -106,7 +106,7 @@ class QwenGameTermLoraModel(PeftModelForCausalLM):
                 lora_dropout=0.05,
                 bias="none",
                 target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-                inference_mode=True,
+                inference_mode=False,
             )
         super().__init__(model=model, peft_config=peft_config, adapter_name=adapter_name, **kwargs)
 
