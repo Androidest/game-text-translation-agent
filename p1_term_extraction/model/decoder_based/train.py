@@ -1,15 +1,17 @@
 from transformers import TrainingArguments, Trainer, IntervalStrategy, SchedulerType, EvalPrediction, TrainerControl, TrainerCallback, TrainerState
-from .model import GameTermBertTokenizer, GameTermBert
-from .dataset import GameTermNERDataset
+from .model import QwenGameTermTokenizer, QwenGameTermLoraModel
+from .dataset import GameTermGenDataset
+from transformers import AutoModelForCausalLM
 from utils import *
 from typing import *
 import numpy as np
 import pdb
 import datetime
 
-MODEL_ID = ModelID.MACBERT_BASE
-LOG_PATH = PATH_PROJECT_ROOT / "p1_term_extraction" / "model" / "logs" / "encoder-based"
-SAVE_PATH = get_model_local_path(ModelID.MACBERT_GAME_TERM, ModelSrc.LOCAL)
+BASE_MODEL_ID = ModelID.QWEN3
+LORA_MODEL_ID = ModelID.QWEN3_LORA
+LOG_PATH = PATH_PROJECT_ROOT / "p1_term_extraction" / "model" / "logs" / "decoder-based"
+SAVE_PATH = get_model_local_path(LORA_MODEL_ID, ModelSrc.LOCAL)
 TRAIN_SHEET_PATH = PATH_DATA/'term_extraction_train.xlsx'
 TEST_SHEET_PATH = PATH_DATA/'term_extraction_test.xlsx'
 
@@ -21,28 +23,31 @@ class ExtraLogger(TrainerCallback):
                 "learning_rate": current_lr,
             })
 
-class MetricsForGameTermBILabels:
-    def __init__(self, tokenizer:GameTermBertTokenizer):
+class MetricsForGameTermGen:
+    def __init__(self, tokenizer:QwenGameTermTokenizer):
         self.tokenizer = tokenizer
 
     def __call__(self, params:EvalPrediction)-> Dict[str, float]:
+        pdb.set_trace()
         pred_logits = params.predictions[0]
         true_label_ids = params.label_ids
 
-        pred_label_ids = np.argmax(pred_logits, axis=-1, keepdims=False)
-        true_offset_list = self.tokenizer.convert_label_ids_to_term_offsets(true_label_ids)
-        pred_offset_list = self.tokenizer.convert_label_ids_to_term_offsets(pred_label_ids)
+        true_text = self.tokenizer.decode(true_label_ids)
+        true_terms_list = self.tokenizer.get_terms_from_output(true_text)
+
+        pred_text = self.tokenizer.decode(pred_logits)
+        pred_terms_list = self.tokenizer.get_terms_from_output(pred_text)
 
         tp = 0
         fp = 0
         fn = 0
-        for true_offset, pred_offset in zip(true_offset_list, pred_offset_list):
-            true_offset = set(true_offset)
-            pred_offset = set(pred_offset)
+        for true_terms, pred_terms in zip(true_terms_list, pred_terms_list):
+            true_terms = set(true_terms)
+            pred_terms = set(pred_terms)
 
-            tp += len(true_offset & pred_offset)
-            fp += len(pred_offset - true_offset)
-            fn += len(true_offset - pred_offset)
+            tp += len(true_terms & pred_terms)
+            fp += len(pred_terms - true_terms)
+            fn += len(true_terms - pred_terms)
 
         precision = tp / float(tp + fp) if (tp + fp) > 0 else 1.0
         recall = tp / float(tp + fn) if (tp + fn) > 0 else 1.0
@@ -54,17 +59,19 @@ class MetricsForGameTermBILabels:
             "f1":f1,
         }
 
-def train_encoder() -> Trainer:
-    MODEL_PATH = get_model_local_path(MODEL_ID)
-    model:GameTermBert  = GameTermBert.from_pretrained(MODEL_PATH)
-    tokenizer:GameTermBertTokenizer = GameTermBertTokenizer.from_pretrained(MODEL_PATH)
+def train_decoder() -> Trainer:
+    BASE_MODEL_PATH = get_model_local_path(BASE_MODEL_ID)
+
+    tokenizer:QwenGameTermTokenizer = QwenGameTermTokenizer.from_pretrained(BASE_MODEL_PATH)
+    base_model  = AutoModelForCausalLM.from_pretrained(BASE_MODEL_PATH)
+    lora_model = QwenGameTermLoraModel(base_model)
 
     sheet_train = Sheet(TRAIN_SHEET_PATH)
-    ds_train = GameTermNERDataset(tokenizer, sheet_train)
+    ds_train = GameTermGenDataset(tokenizer, sheet_train)
     print(f"ds_train len: {len(ds_train)}, seq_len:{len(ds_train[0]["input_ids"])}")
 
     sheet_test = Sheet(TEST_SHEET_PATH)
-    ds_test = GameTermNERDataset(tokenizer, sheet_test)
+    ds_test = GameTermGenDataset(tokenizer, sheet_test)
     print(f"ds_test len: {len(ds_test)}, seq_len:{len(ds_test[0]["input_ids"])}")
 
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -82,22 +89,22 @@ def train_encoder() -> Trainer:
         load_best_model_at_end=True,
         
         num_train_epochs=5,
-        per_device_train_batch_size=64,
-        per_device_eval_batch_size=256,
+        per_device_train_batch_size=1,
+        per_device_eval_batch_size=1,
         optim="adamw_torch",
-        weight_decay=1e-2,
+        weight_decay=1e-3,
         learning_rate=1e-5,
         warmup_ratio=0.1,
         lr_scheduler_type=SchedulerType.COSINE,
     )
 
     trainer = Trainer(
-        model=model,
+        model=lora_model,
         args=training_args,
         train_dataset=ds_train,
         eval_dataset=ds_test,
         callbacks=[ExtraLogger()],
-        compute_metrics=MetricsForGameTermBILabels(tokenizer), 
+        compute_metrics=MetricsForGameTermGen(tokenizer), 
     )
     
     trainer.train()
@@ -111,12 +118,11 @@ def train_encoder() -> Trainer:
 
     BEST_MODEL_PATH = str(SAVE_PATH / 'best')
     trainer.model.save_pretrained(BEST_MODEL_PATH)
-    tokenizer.save_pretrained(BEST_MODEL_PATH)
     print(f"Best model saved to: {BEST_MODEL_PATH}")
 
     return trainer
 
 if __name__ == "__main__":
-    train_encoder()
+    train_decoder()
 
     
