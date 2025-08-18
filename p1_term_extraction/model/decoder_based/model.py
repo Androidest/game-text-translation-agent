@@ -1,6 +1,7 @@
 from peft import PeftModelForCausalLM, LoraConfig, PeftConfig
-from transformers import Qwen3ForCausalLM, Qwen2TokenizerFast
+from transformers import Qwen2TokenizerFast
 from utils import *
+from typing import Union, List
 import torch
 import json
 
@@ -22,26 +23,62 @@ class QwenGameTermTokenizer(Qwen2TokenizerFast):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def create_term_extraction_prompt(self, input_text:str, label_terms:str = None):
-        # return self.final_prompt_template.format(user_input=text)
-        input_text = self.apply_chat_template(
+    def create_term_extraction_prompt(
+        self, 
+        input_text:Union[str, List[str]], 
+        target_text:Union[str, List[str]] = None,
+    )->Union[str, List[str]]:
+
+        sys_prompt = { "role":"system", "content":"提取文中的游戏名词和术语，返回JSON列表" }
+        continue_final_message = target_text == None
+
+        if isinstance(input_text, list):
+            if target_text == None:
+                target_text = ['["'] * len(input_text)
+
+            if not isinstance(target_text, list):
+                raise ValueError(f"Given 'target_text' is type of {type(target_text)}, must be the same type as 'input_text' or None")
+
             conversation = [
-                { "role":"system", "content":"提取文中的游戏名词和术语，返回JSON列表" },
-                { "role":"user", "content":input_text }
-            ],
+                [ 
+                    sys_prompt, 
+                    { "role":"user", "content":user_text },
+                    { "role":"assistant", "content":assistant_text },
+                ]
+                for user_text, assistant_text in zip(input_text, target_text)
+            ]
+
+        elif isinstance(input_text, str):
+            if target_text == None:
+                target_text = '["'
+
+            if not isinstance(target_text, str):
+                raise ValueError(f"Given 'target_text' is type of {type(target_text)}, must be the same type as 'input_text' or None")
+            
+            conversation = [ 
+                sys_prompt, 
+                { "role":"user", "content":input_text },
+                { "role":"assistant", "content":target_text },
+            ]
+        else:
+            raise ValueError(f"Given 'input_text' is type of {type(input_text)}, must be type of Union[str, List[str]]")
+
+        # return self.final_prompt_template.format(user_input=text)
+        return self.apply_chat_template(
+            conversation = conversation,
             tokenize=False,
-            add_generation_prompt=True,
+            add_generation_prompt=False,
+            continue_final_message=continue_final_message, # True:do not end with <|im_end|>（eval），False：end with <|im_end|>（train）
             enable_thinking=False,
         )
-
-        if label_terms is None:
-            input_text += '["'
-        else:
-            input_text += label_terms
-
-        return input_text
     
-    def get_terms_from_output(self, output_text:str, return_list:bool=True):
+    def get_terms_from_output(self, output_text:Union[str, List[str]], return_list:bool=True):
+        if isinstance(output_text, list):
+            return [ self._get_terms_from_output(t, return_list) for t in output_text]
+        elif isinstance(output_text, str):
+            return self._get_terms_from_output(output_text, return_list)
+    
+    def _get_terms_from_output(self, output_text:str, return_list:bool=True):
         start = output_text.find('[')
         if start == -1:
             return None
@@ -71,3 +108,27 @@ class QwenGameTermLoraModel(PeftModelForCausalLM):
                 inference_mode=True,
             )
         super().__init__(model=model, peft_config=peft_config, adapter_name=adapter_name, **kwargs)
+
+if __name__ == "__main__":
+    MODEL_PATH = get_model_local_path(ModelID.QWEN3)
+    DS_SHEET_PATH = PATH_DATA/'term_extraction_train.xlsx'
+
+    tokenizer:QwenGameTermTokenizer = QwenGameTermTokenizer.from_pretrained(MODEL_PATH)
+    sheet = Sheet(DS_SHEET_PATH)[41118:41118+3]
+    cn = list(sheet['CN'])
+    terms = list(sheet['TERMS'])
+
+    samples = tokenizer.create_term_extraction_prompt(
+        input_text=cn,
+        target_text=terms,
+    )
+
+    for t in samples:
+        print(t.replace('\n', '\\n'))
+
+    extracted_terms = tokenizer.get_terms_from_output(samples)
+
+    for e, t in zip(extracted_terms, terms):
+        print('原有的术语', t)
+        print('抽取的术语', e)
+        print('-'*50)
