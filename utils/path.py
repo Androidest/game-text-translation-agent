@@ -21,6 +21,7 @@ class ModelID(Enum):
     QWEN3 = "qwen3-0.6b"
     QWEN2_5 = "qwen2.5-0.5b"
     QWEN3_LORA = "qwen3-0.6b-lora"
+    QWEN2_5_LORA = "qwen2.5-0.5b-lora"
 
 MODEL_MAPPINGS = {
     ModelID.MACBERT_BASE: {
@@ -40,6 +41,9 @@ MODEL_MAPPINGS = {
     },
     ModelID.QWEN3_LORA: {
         ModelSrc.MODELSCOPE: "androidest/Qwen3-0.6B-game-term-lora",
+    },
+    ModelID.QWEN2_5_LORA: {
+        ModelSrc.MODELSCOPE: "androidest/Qwen2.5-0.5B-game-term-lora",
     },
 }
 
