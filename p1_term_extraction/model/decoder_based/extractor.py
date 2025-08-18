@@ -1,4 +1,4 @@
-from p1_term_extraction.model.decoder_based.model import QwenGameTermLora
+from p1_term_extraction.model.decoder_based.model import QwenGameTermLoraModel, QwenGameTermTokenizer
 from p1_term_extraction.model.data_preprocessing import split_text
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from utils import *
@@ -21,15 +21,15 @@ class DecoderBasedTermExtractor:
         MODEL_LORA_PATH = str(get_model_local_path(lora_model_id, lora_scr))
         self.device = device
 
-        self.tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
+        self.tokenizer:QwenGameTermTokenizer = QwenGameTermTokenizer.from_pretrained(MODEL_PATH)
         base_model  = AutoModelForCausalLM.from_pretrained(MODEL_PATH)
 
         if lora_scr == ModelSrc.LOCAL and not os.path.exists(MODEL_LORA_PATH):
             # if the source is LOCAL and the model files do not exists
             # create a new lora model and save it locally
-            QwenGameTermLora(base_model).save_pretrained(MODEL_LORA_PATH)
+            QwenGameTermLoraModel(base_model).save_pretrained(MODEL_LORA_PATH)
         
-        self.model:QwenGameTermLora = QwenGameTermLora.from_pretrained(
+        self.model:QwenGameTermLoraModel = QwenGameTermLoraModel.from_pretrained(
             model=base_model,
             model_id=str(MODEL_LORA_PATH),
             adapter_name="extractor",
@@ -49,16 +49,7 @@ class DecoderBasedTermExtractor:
 
     @torch.no_grad()
     def extract(self, text):
-        # text = tokenizer.apply_chat_template(
-        #     conversation = [
-        #         {"role": "user", "content": user_input}
-        #     ],
-        #     tokenize=True,
-        #     add_generation_prompt=True,
-        #     enable_thinking=False
-        # )
-        
-        text = self.model.create_term_extraction_prompt(text)
+        text = self.tokenizer.create_term_extraction_prompt(text)
         
         x = self.tokenizer(text, return_tensors="pt", add_special_tokens=False)
         x = {k:v.to(self.device) for k,v in x.items()}
@@ -66,7 +57,7 @@ class DecoderBasedTermExtractor:
         y = self.model.generate(**x)
         y = self.tokenizer.decode(y[0], skip_special_tokens=False)
 
-        terms = self.model.get_terms_from_output(y)
+        terms = self.tokenizer.get_terms_from_output(y)
         return terms
 
 if __name__ == "__main__":
@@ -76,7 +67,8 @@ if __name__ == "__main__":
     extractor = DecoderBasedTermExtractor(
         base_model_id=ModelID.QWEN3,
         lora_model_id=ModelID.QWEN3_LORA,
-        lora_scr=ModelSrc.LOCAL
+        lora_scr=ModelSrc.LOCAL,
+        device='cpu'
     )
 
     for i in range(222, 242):
