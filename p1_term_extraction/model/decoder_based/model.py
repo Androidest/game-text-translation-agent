@@ -1,3 +1,4 @@
+# Using the Seq2Seq generative approach is better for term extraction tasks with a decoder-only model(auto-regressive model)
 from peft import PeftModelForCausalLM, LoraConfig, PeftConfig
 from transformers import Qwen2TokenizerFast
 from utils import *
