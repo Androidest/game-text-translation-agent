@@ -11,7 +11,7 @@ TRANSLATION_INSTRUCTION = """你是专业的游戏文本翻译工具。输入是
 2. [首要]参照术语译文的同时，还要严格【遵循语法规则】，例如名词复数、动词时态、大小等变形，而不是直接拷贝翻译。
 3. [重点]原文中的【四字词】都属于技能名，若不在术语表中，则需要按常规游戏技能名的风格起个【简化的技能名】，尽量使用高级词汇，【尽量省略介词】。
 4. [重点]若有给出【参考类似过往翻译（RAG检索结果）】，则要严格参照过往的翻译规则进行翻译。
-5. 要保留原文的富文本样式和排版，例如颜色、大小、加粗、斜体等、换行符、显式换行标记（字符串形式的换行符：\\n）、空格符等。
+5. 要保留原文的富文本样式和排版，例如颜色、大小、加粗、斜体等、换行符、显式换行标记（字符串形式的换行符：\\r 、\\n）、空格符等。
 6. 要保留原文的特殊参数格式，例如{0}、{var1}等参数。
 7. 译文要【尽量简短】
 #输出译文字典格式说明：
@@ -26,13 +26,13 @@ TRANSLATION_INSTRUCTION = """你是专业的游戏文本翻译工具。输入是
 ##参考术语字典：
 {"天梯门票": ["Ticket del Escalón", "Ticket del Láderas"], "花灵碎片": ["Fragmento de Hada Floral"], "级": ["Nv."], "史诗": ["Épico"]}
 ##输入原文字典：
-{"0": "#585天梯门票不足\\n是否消耗{0}购买#585 1", "1": "史诗花灵碎片·地", "2": "大量的1级结晶，属性类型随机"}
+{"0": "#585天梯门票不足\\r\\n是否消耗{0}购买#585 1", "1": "史诗花灵碎片·地", "2": "大量的1级结晶，属性类型随机"}
 
 #[重点]根据前面的输入样例，你应该输出的严格的JSON文本，【translations里是输出译文字典】:
 {
     "translations": 
     {
-        "0": "Ticket de Escalón #585 insuficiente\\n¿Deseas consumir {0} para comprar 1 #585?",
+        "0": "Ticket de Escalón #585 insuficiente\\r\\n¿Deseas consumir {0} para comprar 1 #585?",
         "1": "Fragmento de Hada Floral Épica - Tierra",
         "2": "Cantidad grande de Cristales Nv.1 de un atributo aleatorio."
     }
@@ -63,6 +63,13 @@ ERROR_NEXT_LINE = """
     索引位置为【index={line}】处的译文存在排版样式错误:
     【index={line}】的原文中有{input_nl_count}个显式换行标记（\\n）
     【index={line}】的译文中有{output_nl_count}个显式换行标记（\\n）
+    请确保译文与原文排版样式一致，即【显式换行标记】的【数量要一致】，标记的【位置也一样】。
+"""
+
+ERROR_NEXT_LINE_R = """
+    索引位置为【index={line}】处的译文存在排版样式错误:
+    【index={line}】的原文中有{input_nl_count}个显式换行标记（\\r）
+    【index={line}】的译文中有{output_nl_count}个显式换行标记（\\r）
     请确保译文与原文排版样式一致，即【显式换行标记】的【数量要一致】，标记的【位置也一样】。
 """
 

@@ -61,16 +61,27 @@ def create_translation_agent(
                     ),
                 )
             
-        # check \\n
         for index_key in cn_dict.keys():
             cn = cn_dict[index_key]
             es = es_dict[index_key]
+
+            # check \\n
             if cn.count("\\n") != es.count("\\n"):
                 return StructuredValidatingState(
                     error = ERROR_NEXT_LINE.format(
                         line=index_key,
                         input_nl_count=cn.count("\\n"),
                         output_nl_count=es.count("\\n"),
+                    ),
+                )
+            
+            # check \\r
+            if cn.count("\\r") != es.count("\\r"):
+                return StructuredValidatingState(
+                    error = ERROR_NEXT_LINE_R.format(
+                        line=index_key,
+                        input_nl_count=cn.count("\\r"),
+                        output_nl_count=es.count("\\r"),
                     ),
                 )
 
