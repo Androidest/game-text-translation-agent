@@ -70,7 +70,7 @@ def train_decoder() -> Trainer:
     print(f"ds_train len: {len(ds_train)}, seq_len:{len(ds_train[0]["input_ids"])}")
 
     sheet_test = Sheet(TEST_SHEET_PATH)
-    ds_test = GameTermGenDataset(tokenizer, sheet_test, 100, 130)
+    ds_test = GameTermGenDataset(tokenizer, sheet_test)
     print(f"ds_test len: {len(ds_test)}, seq_len:{len(ds_test[0]["input_ids"])}")
 
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -79,7 +79,7 @@ def train_decoder() -> Trainer:
         logging_dir=LOG_PATH / timestamp,
         logging_steps=10,
         eval_strategy=IntervalStrategy.STEPS,
-        eval_steps=10,
+        eval_steps=50,
         eval_accumulation_steps=1,   # [Important] To prevent gathering all predictions of the entire test set at once and making a single compute_metrics call. 
         save_strategy='best',
         save_total_limit=3,
@@ -91,7 +91,7 @@ def train_decoder() -> Trainer:
         num_train_epochs=3,
         per_device_train_batch_size=1,
         per_device_eval_batch_size=1,
-        gradient_accumulation_steps=1,
+        gradient_accumulation_steps=4,
         optim="adamw_torch",
         weight_decay=1e-4,
         learning_rate=1e-4,
