@@ -19,16 +19,15 @@ class TermRetriever(TokenizerBasedTermExtractor):
                 and word in self.terms_sheet.dataframe.index:
                 trans = self.terms_sheet[word, "TERM_ES"]
                 if not isinstance(trans, str):
-                    raise ValueError(f"Duplicate Term Translation for [{word}]:\n{self.terms_sheet[word, "TERM_ES"]}")
+                    raise ValueError(f"Duplicate Term Translation for [{word}]:\n{trans}")
                 if trans == "":
                     continue
                 try:
-                    terms[word] = json.loads(self.terms_sheet[word, "TERM_ES"])
+                    terms[word] = json.loads(trans)
                 except ValueError as e:
-                    print(f"Error: {e}")
                     print(f"Error Term: {word}")
-                    print(f'Error JSON: {self.terms_sheet[word, "TERM_ES"]}')
-
+                    print(f'Error JSON: {trans}')
+                    raise e
         return terms
     
 if __name__ == "__main__":
