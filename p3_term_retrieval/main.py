@@ -22,7 +22,13 @@ class TermRetriever(TokenizerBasedTermExtractor):
                     raise ValueError(f"Duplicate Term Translation for [{word}]:\n{self.terms_sheet[word, "TERM_ES"]}")
                 if trans == "":
                     continue
-                terms[word] = json.loads(self.terms_sheet[word, "TERM_ES"])
+                try:
+                    terms[word] = json.loads(self.terms_sheet[word, "TERM_ES"])
+                except ValueError as e:
+                    print(f"Error: {e}")
+                    print(f"Error Term: {word}")
+                    print(f'Error JSON: {self.terms_sheet[word, "TERM_ES"]}')
+
         return terms
     
 if __name__ == "__main__":
