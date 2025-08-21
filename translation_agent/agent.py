@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from typing import Dict, List, Optional
 import numpy as np
 import json
+import pdb
 
 class TranslationInputSchema(BaseModel):
     rag_translations: Optional[List[List[str]]] = Field(description="参考类似过往翻译（RAG检索结果）")
