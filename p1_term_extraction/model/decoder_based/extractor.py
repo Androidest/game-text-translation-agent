@@ -48,16 +48,24 @@ class DecoderBasedTermExtractor:
         gen_config.repetition_penalty = 1.0
 
     @torch.no_grad()
-    def extract(self, text):
-        text = self.tokenizer.create_term_extraction_prompt(text)
-        
-        x = self.tokenizer(text, return_tensors="pt", add_special_tokens=False)
-        x = {k:v.to(self.device) for k,v in x.items()}
+    def extract(self, text:Union[str, List[str]]) -> List[List[str]]:
+        if isinstance(text, str):
+            text = [text]
 
-        y = self.model.generate(**x)
-        y = self.tokenizer.decode(y[0], skip_special_tokens=False)
+        text = self.tokenizer.apply_term_extraction_template(text)
+        inputs = self.tokenizer(
+            text, 
+            return_tensors="pt", 
+            add_special_tokens=False, 
+            padding_side='left',
+            padding=True,
+        )
+        inputs = {k:v.to(self.device) for k,v in inputs.items()}
 
-        terms = self.tokenizer.get_terms_from_output(y)
+        outputs = self.model.generate(**inputs)
+        outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=False)
+        terms = self.tokenizer.get_terms_from_output(outputs)
+
         return terms
 
 if __name__ == "__main__":
@@ -71,9 +79,14 @@ if __name__ == "__main__":
         device='cpu'
     )
 
-    for i in range(222, 242):
+    start = 222
+    end = 242
+    original_terms_list = list(sheet_test[start:end, "TERMS"])
+    text_list = list(sheet_test[start:end, "CN"])
+    terms_list = extractor.extract(text_list)
+
+    for text, terms, oterms in zip(text_list, terms_list, original_terms_list):
         print("-"*20)
-        text = sheet_test[i, "CN"]
         print("Text:", text)
-        print("Original terms:", sheet_test[i, "TERMS"])
-        print("Extracted terms:", extractor.extract(text))
+        print("Original terms:", oterms)
+        print("Extracted terms:", terms)
