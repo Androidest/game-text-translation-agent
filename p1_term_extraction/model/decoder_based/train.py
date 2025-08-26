@@ -92,6 +92,14 @@ def train_decoder() -> Seq2SeqTrainer:
     gen_config.top_p = 0.1
     gen_config.repetition_penalty = 1.0
 
+    sheet_train = Sheet(TRAIN_SHEET_PATH)
+    ds_train = GameTermGenDataset(tokenizer, sheet_train)
+    print(f"ds_train len: {len(ds_train)}")
+
+    sheet_test = Sheet(TEST_SHEET_PATH)
+    ds_test = GameTermGenDataset(tokenizer, sheet_test, is_generation_eval=True)
+    print(f"ds_test len: {len(ds_test)}")
+
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     training_args = Seq2SeqTrainingArguments(
         output_dir=SAVE_PATH,
@@ -120,14 +128,6 @@ def train_decoder() -> Seq2SeqTrainer:
         predict_with_generate=True,
         batch_eval_metrics=True,
     )
-
-    sheet_train = Sheet(TRAIN_SHEET_PATH)
-    ds_train = GameTermGenDataset(tokenizer, sheet_train)
-    print(f"ds_train len: {len(ds_train)}")
-
-    sheet_test = Sheet(TEST_SHEET_PATH)
-    ds_test = GameTermGenDataset(tokenizer, sheet_test, is_generation_eval=True)
-    print(f"ds_test len: {len(ds_test)}")
     
     trainer = CustomTrainer(
         model=lora_model,
