@@ -16,7 +16,6 @@ from .dataset import GameTermGenDataset
 from .trainer import CustomTrainer
 from utils import *
 from typing import *
-import numpy as np
 import datetime
 import torch
 
@@ -67,14 +66,18 @@ class MetricsForTerms:
         precision = tp / float(tp + fp) if (tp + fp) > 0 else 1.0
         recall = tp / float(tp + fn) if (tp + fn) > 0 else 1.0
         f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
-        print("true_terms_list", true_terms_list)
-        print("pred_terms_list", pred_terms_list)
-
-        return {
+       
+        metrics = {
             "precision":precision,
             "recall":recall,
             "f1":f1,
         }
+        
+        print("true_terms_list", true_terms_list)
+        print("pred_terms_list", pred_terms_list)
+        print(",".join([f"{k}:{v:0.2} " for k,v in metrics.items()]))
+        print('-'*50)
+        return metrics
 
 def train_decoder() -> Seq2SeqTrainer:
     BASE_MODEL_PATH = get_model_local_path(BASE_MODEL_ID)
@@ -83,6 +86,12 @@ def train_decoder() -> Seq2SeqTrainer:
     base_model  = AutoModelForCausalLM.from_pretrained(BASE_MODEL_PATH)
     lora_model = QwenGameTermLoraModel(base_model)
 
+    gen_config:GenerationConfig = base_model.generation_config
+    gen_config.max_new_tokens = 1024
+    gen_config.temperature = 0.1
+    gen_config.top_p = 0.1
+    gen_config.repetition_penalty = 1.0
+
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     training_args = Seq2SeqTrainingArguments(
         output_dir=SAVE_PATH,
@@ -90,7 +99,7 @@ def train_decoder() -> Seq2SeqTrainer:
         logging_dir=LOG_PATH / timestamp,
         logging_steps=5,
         eval_strategy=IntervalStrategy.STEPS,
-        eval_steps=5,
+        eval_steps=50,
         eval_accumulation_steps=1,   # [Important] To prevent gathering all predictions of the entire test set at once and making a single compute_metrics call. 
         save_strategy='best',
         save_total_limit=3,
@@ -98,23 +107,18 @@ def train_decoder() -> Seq2SeqTrainer:
         greater_is_better=True,       # F1 is greater better
         load_best_model_at_end=True,
         
-        num_train_epochs=3,
-        per_device_train_batch_size=1,
-        per_device_eval_batch_size=4,
-        gradient_accumulation_steps=4,
+        num_train_epochs=1,
+        per_device_train_batch_size=2,
+        per_device_eval_batch_size=8,
+        gradient_accumulation_steps=8,
         optim="adamw_torch",
         weight_decay=1e-4,
-        learning_rate=5e-5,
+        learning_rate=1e-4,
         warmup_ratio=0.1,
         lr_scheduler_type=SchedulerType.COSINE,
 
         predict_with_generate=True,
         batch_eval_metrics=True,
-        # generation_config = GenerationConfig(
-        #     max_length = 512,
-        #     max_new_tokens = 128,
-        #     repetition_penalty =  10.0,
-        # ),
     )
 
     sheet_train = Sheet(TRAIN_SHEET_PATH)
@@ -122,7 +126,7 @@ def train_decoder() -> Seq2SeqTrainer:
     print(f"ds_train len: {len(ds_train)}")
 
     sheet_test = Sheet(TEST_SHEET_PATH)
-    ds_test = GameTermGenDataset(tokenizer, sheet_test, 100, 110, is_generation_eval=True)
+    ds_test = GameTermGenDataset(tokenizer, sheet_test, is_generation_eval=True)
     print(f"ds_test len: {len(ds_test)}")
     
     trainer = CustomTrainer(
@@ -147,6 +151,8 @@ def train_decoder() -> Seq2SeqTrainer:
 
     BEST_MODEL_PATH = str(SAVE_PATH / 'best')
     trainer.model.save_pretrained(BEST_MODEL_PATH)
+    gen_config.save_pretrained(BEST_MODEL_PATH)
+    tokenizer.save_pretrained(BEST_MODEL_PATH)
     print(f"Best model saved to: {BEST_MODEL_PATH}")
 
     return trainer

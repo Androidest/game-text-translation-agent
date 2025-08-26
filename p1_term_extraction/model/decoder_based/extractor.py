@@ -40,7 +40,6 @@ class DecoderBasedTermExtractor:
         self.model.to(self.device)
         self.model.merge_and_unload()
 
-        # TODO 要挪到train.py
         gen_config = self.model.generation_config
         gen_config.max_new_tokens = 1024
         gen_config.temperature = 0.001
