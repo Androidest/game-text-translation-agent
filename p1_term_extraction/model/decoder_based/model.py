@@ -6,73 +6,87 @@ from typing import Union, List
 import torch
 import json
 
-# Used by QWEN3
-THINK_SPACEHOLDER = """
-<think>
+# 
+"""
+Chat Template used by QWEN3 (without thinking)
 
-</think>"""
+For structured output (JSON list) generation:
+    <|im_start|>system
+    提取文中的游戏名词和术语，返回JSON列表<|im_end|>
+    <|im_start|>user
+    {user_input}<|im_end|>
+    <|im_start|>assistant
+    <think>
 
-PROMPT_TEMPLATE = """\
-<|im_start|>system
-提取文中的游戏名词和术语，返回JSON列表<|im_end|>
-<|im_start|>user
-{user_input}<|im_end|>
-<|im_start|>assistant{think_spaceholder}
-[\""""
+    </think>
+
+    ["
+
+For teacher-forcing training,
+input:
+    <|im_start|>system
+    提取文中的游戏名词和术语，返回JSON列表<|im_end|>
+    <|im_start|>user
+    {user_input}<|im_end|>
+    <|im_start|>assistant
+    <think>
+
+    </think>
+
+label:
+    ["术语1", "术语2", "术语3" ... ]<|im_end|>
+"""
 
 class QwenGameTermTokenizer(Qwen2TokenizerFast):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def create_term_extraction_prompt(
+    def apply_term_extraction_template(
         self, 
-        input_text:Union[str, List[str]], 
+        user_text:Union[str, List[str]], 
         target_text:Union[str, List[str]] = None,
     )->Union[str, List[str]]:
+        
+        has_target = target_text != None
+        if has_target and type(user_text) != type(target_text):
+            raise ValueError(f"The given 'user_text' & 'target_text' is type of {type(user_text)} & {type(target_text)}, target_text must be the same type as 'input_text' or None")
 
+        if isinstance(user_text, str):
+            user_text = [user_text]
+        if not isinstance(user_text, list):
+            raise ValueError(f"The given 'user_text' is type of {type(user_text)}, must be type of Union[str, List[str]]")
+        if has_target:
+            if isinstance(target_text, str):
+                target_text = [target_text]
+            if len(user_text) != len(target_text):
+                raise ValueError("tThe given target_text and user_text are not the same length.")
+              
         sys_prompt = { "role":"system", "content":"提取文中的游戏名词和术语，返回JSON列表" }
-        continue_final_message = target_text == None
-
-        if isinstance(input_text, list):
-            if target_text == None:
-                target_text = ['["'] * len(input_text)
-
-            if not isinstance(target_text, list):
-                raise ValueError(f"Given 'target_text' is type of {type(target_text)}, must be the same type as 'input_text' or None")
-
-            conversation = [
-                [ 
-                    sys_prompt, 
-                    { "role":"user", "content":user_text },
-                    { "role":"assistant", "content":assistant_text },
-                ]
-                for user_text, assistant_text in zip(input_text, target_text)
-            ]
-
-        elif isinstance(input_text, str):
-            if target_text == None:
-                target_text = '["'
-
-            if not isinstance(target_text, str):
-                raise ValueError(f"Given 'target_text' is type of {type(target_text)}, must be the same type as 'input_text' or None")
-            
+        requests = []
+        responses = []
+        for i in range(len(user_text)):
             conversation = [ 
                 sys_prompt, 
-                { "role":"user", "content":input_text },
-                { "role":"assistant", "content":target_text },
+                { "role":"user", "content":user_text[i] },
             ]
-        else:
-            raise ValueError(f"Given 'input_text' is type of {type(input_text)}, must be type of Union[str, List[str]]")
+            prompts = self.apply_chat_template(
+                conversation=conversation,
+                tokenize=False,
+                enable_thinking=False,
+                add_generation_prompt=True,
+                # continue_final_message=True, # True:do not end with <|endoftext|>，False：end with <|endoftext|>
+            )
+            if has_target:
+                responses.append(target_text[i] + '<|im_end|>')
+            else:
+                prompts += '["'
 
-        # return self.final_prompt_template.format(user_input=text)
-        return self.apply_chat_template(
-            conversation = conversation,
-            tokenize=False,
-            add_generation_prompt=False,
-            continue_final_message=continue_final_message, # True:do not end with <|im_end|>（eval），False：end with <|im_end|>（train）
-            enable_thinking=False,
-        )
-    
+            requests.append(prompts)
+
+        if has_target:
+            return requests, responses
+        return requests
+
     def get_terms_from_output(self, output_text:Union[str, List[str]], return_list:bool=True):
         if isinstance(output_text, list):
             return [ self._get_terms_from_output(t, return_list) for t in output_text]
@@ -82,7 +96,7 @@ class QwenGameTermTokenizer(Qwen2TokenizerFast):
     def _get_terms_from_output(self, output_text:str, return_list:bool=True):
         start = output_text.find('[')
         if start == -1:
-            return None
+            start = 0
         
         end = output_text.find(']', start)
         if end == -1:
@@ -101,8 +115,8 @@ class QwenGameTermLoraModel(PeftModelForCausalLM):
     def __init__(self, model:torch.nn.Module, peft_config:PeftConfig=None, adapter_name:str='default', **kwargs):
         if peft_config is None:
             peft_config = LoraConfig(
-                r=32, # rank
-                lora_alpha=16, # controls the multiplier α/r in ΔW=r/α*​AB
+                r=8, # rank
+                lora_alpha=8, # controls the multiplier α/r in ΔW=r/α*​AB
                 lora_dropout=0.05,
                 bias="none",
                 target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
@@ -119,17 +133,24 @@ if __name__ == "__main__":
     cn = list(sheet['CN'])
     terms = list(sheet['TERMS'])
 
-    samples = tokenizer.create_term_extraction_prompt(
-        input_text=cn,
-        target_text=terms,
-    )
+    print("Inputs for Training:")
+    mock_outputs = []
+    requests, responses = tokenizer.apply_term_extraction_template(user_text=cn, target_text=terms)
+    for req, res in zip(requests, responses):
+        train_input = req + res
+        mock_outputs.append(res)
+        print(train_input.replace('\n', '\\n'))
+        print('-'*50)
 
-    for t in samples:
-        print(t.replace('\n', '\\n'))
-
-    extracted_terms = tokenizer.get_terms_from_output(samples)
-
+    print("Test terms extraction on generated texts:")
+    extracted_terms = tokenizer.get_terms_from_output(mock_outputs, return_list=True)
     for e, t in zip(extracted_terms, terms):
         print('原有的术语', t)
         print('抽取的术语', e)
+        print('-'*50)
+
+    print("Inputs for Evaluation:")
+    requests = tokenizer.apply_term_extraction_template(user_text=cn)
+    for req in requests:
+        print(req.replace('\n', '\\n'))
         print('-'*50)
