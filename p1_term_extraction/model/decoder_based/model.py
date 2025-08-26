@@ -33,7 +33,7 @@ input:
 
     </think>
 
-label:
+target:
     ["术语1", "术语2", "术语3" ... ]<|im_end|>
 """
 
@@ -96,7 +96,7 @@ class QwenGameTermTokenizer(Qwen2TokenizerFast):
     def _get_terms_from_output(self, output_text:str, return_list:bool=True):
         start = output_text.find('[')
         if start == -1:
-            start = 0
+            return None
         
         end = output_text.find(']', start)
         if end == -1:

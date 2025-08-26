@@ -1,78 +1,123 @@
 from utils import *
 from torch.utils.data import Dataset, DataLoader
-from .model import QwenGameTermTokenizer
-import torch
-import numpy as np
+from .model import QwenGameTermTokenizer, Qwen3ForCausalLM
+import json
 from typing import *
 from transformers.trainer_pt_utils import LabelSmoother
+from transformers.data.data_collator import DataCollatorForSeq2Seq
 
-ModelInputDict = Dict[str, torch.Tensor]
+DSOutput = Dict[str, List[int]]
 
 class GameTermGenDataset(Dataset):
-    def __init__(self, tokenizer:QwenGameTermTokenizer, sheet:Sheet, start:int=0, end:int=-1):
+    def __init__(self, tokenizer:QwenGameTermTokenizer, sheet:Sheet, start:int=0, end:int=-1, is_generation_eval:bool=False):
         if end == -1 or end > len(sheet):
             end = len(sheet)
 
+        self.is_generation_eval = is_generation_eval
         self.dataframe = sheet[start:end]
+
         cn = list(self.dataframe["CN"])
         terms = list(self.dataframe["TERMS"])
 
-        samples = tokenizer.create_term_extraction_prompt(cn, terms)
+        if is_generation_eval:
+            # For text generation evaluation (Generation Quality)
+            requests = tokenizer.apply_term_extraction_template(cn) # create prompts without assistant content
+            self.inputs = tokenizer(requests, add_special_tokens=False)
+            self.terms = [set(json.loads(t)) for t in terms]
+        else:
+            # For Teacher-Forcing training
+            requests, responses = tokenizer.apply_term_extraction_template(cn, terms)
+            self.inputs = tokenizer(requests, add_special_tokens=False)
+            self.labels = []
+            IGNORE_INDEX = LabelSmoother.ignore_index
+            targets = tokenizer(responses, add_special_tokens=False)
+            for i in range(len(targets.input_ids)):
+                self.labels.append([IGNORE_INDEX] * len(self.inputs.input_ids[i]) + targets.input_ids[i])
+                self.inputs.input_ids[i].extend(targets.input_ids[i])
+                self.inputs.attention_mask[i].extend(targets.attention_mask[i])
 
-        x = tokenizer(samples, max_length=1024, padding=True, truncation=True)
-        print('max_len:', len(x.input_ids[0]))
-
-        self.input_ids = np.array(x.input_ids)
-        self.attention_mask = np.array(x.attention_mask)
-
-        IM_START_ID = tokenizer('<|im_start|>').input_ids[0]
-        IM_END_ID = tokenizer('<|im_end|>').input_ids[0]
-        NL_ID = tokenizer('\n').input_ids[0]
-        IGNORE_ID = LabelSmoother.ignore_index
-        
-        labels = np.full_like(self.input_ids, fill_value=IGNORE_ID)
-        labels[self.input_ids == IM_START_ID] = IM_START_ID
-        labels[self.input_ids == IM_END_ID] = IM_END_ID
-        self.labels = labels
-
-        for i in range(labels.shape[0]):
-            end_count = 0
-            start_count = 0
-            for j in reversed(range(labels.shape[1])):
-                id = self.input_ids[i, j]
-                if id == IM_END_ID:
-                    end_count += 1
-                elif id == IM_START_ID:
-                    start_count += 1
-                elif end_count == 1 and start_count == 0:
-                    labels[i, j] = self.input_ids[i, j]
-                elif end_count == start_count and id == NL_ID:
-                    labels[i, j] = NL_ID
-
-    def __getitem__(self, index) -> ModelInputDict:
-        return {
-            "input_ids":torch.from_numpy(self.input_ids[index]),
-            "attention_mask":torch.from_numpy(self.attention_mask[index]),
-            "labels":torch.from_numpy(self.labels[index]),
-        }
+    def __getitem__(self, index:int) -> DSOutput:
+        if self.is_generation_eval:
+            return dict(
+                input_ids=self.inputs.input_ids[index],
+                attention_mask=self.inputs.attention_mask[index],
+                terms=self.terms[index],
+            ) 
+        else:
+            return dict(
+                input_ids=self.inputs.input_ids[index],
+                attention_mask=self.inputs.attention_mask[index],
+                labels=self.labels[index],
+            )
     
     def __len__(self) -> int:
         return len(self.dataframe)
 
+class GameTermGenDataCollator(DataCollatorForSeq2Seq):
+    '''
+        The DataCollatorWithPadding class only deals with input_ids and attention_mask correctly, 
+        while labels have different padding rules: the pad token id should be the IGNORE_INDEX, which is -100. 
+        Therefore, we need to inherit from the DataCollatorForSeq2Seq class which can pad the labels correctly.
+    '''
+    def __call__(self, features:List[DSOutput]):
+        is_generation_eval = "terms" in features[0]
+
+        if is_generation_eval:
+            # left padding for evaluation
+            self.tokenizer.padding_side = 'left'
+            terms = [ f.pop("terms") for f in features ]
+            batch = super().__call__(features)
+            batch['terms'] = terms
+            self.tokenizer.padding_side = 'right'
+            
+        else:
+            # right padding for training
+            self.tokenizer.padding_side = 'right'
+            batch = super().__call__(features)
+
+        return batch
+    
 if __name__ == "__main__":
     MODEL_PATH = get_model_local_path(ModelID.QWEN3)
-    DS_SHEET_PATH = PATH_DATA/'term_extraction_train.xlsx'
+    TRAIN_SHEET_PATH = PATH_DATA/'term_extraction_train.xlsx'
+    EVAL_SHEET_PATH = PATH_DATA/'term_extraction_test.xlsx'
 
-    tokenizer = QwenGameTermTokenizer.from_pretrained(MODEL_PATH)
-    sheet = Sheet(DS_SHEET_PATH)
-    ds = GameTermGenDataset(tokenizer, sheet)
+    tokenizer:QwenGameTermTokenizer = QwenGameTermTokenizer.from_pretrained(MODEL_PATH)
+    data_collator = GameTermGenDataCollator(tokenizer=tokenizer, padding=True, return_tensors='pt')
 
-    print(f"ds len: {len(ds)}")
-    for batch in DataLoader(ds, batch_size=3, shuffle=True):
+    print("====================== Test GameTermGenDataset =======================")
+    sheet = Sheet(TRAIN_SHEET_PATH)
+    train_ds = GameTermGenDataset(tokenizer, sheet)
+    print(f"ds len: {len(train_ds)}")
+
+    for batch in DataLoader(train_ds, batch_size=3, shuffle=True, collate_fn=data_collator):
         print(batch["input_ids"].shape)
         print(batch["attention_mask"].shape)
         print(batch["labels"].shape)
 
-        print(batch["input_ids"][0])
-        print(batch["labels"][0])
+        input_text = tokenizer.decode(batch["input_ids"][0])
+        print('\n[Input Text]:\n', input_text)
+        print()
+        print("\n[input_ids]:\n", batch["input_ids"][0])
+        print("\n[labels]:\n", batch["labels"][0])
+        break
+
+    print("\n\n====================== Test Eval =======================")
+    sheet = Sheet(EVAL_SHEET_PATH)
+    eval_ds = GameTermGenDataset(tokenizer, sheet, is_generation_eval=True)
+    model:Qwen3ForCausalLM = Qwen3ForCausalLM.from_pretrained(MODEL_PATH)
+
+    for batch in DataLoader(eval_ds, batch_size=3, shuffle=True, collate_fn=data_collator):
+        batch_terms = batch.pop("terms")
+        output_texts = model.generate(**batch)
+
+        input_text = tokenizer.batch_decode(batch["input_ids"])
+        print('\n[Input Text For Generation Eval]:\n', input_text[0])
+
+        output_text = tokenizer.batch_decode(output_texts)
+        print('\n[Output Text For Generation Eval]:\n', output_text[0])
+
+        extracted_terms = tokenizer.get_terms_from_output(output_text)
+        print('\n[Terms from labels]:\n', batch_terms[0])
+        print('\n[Terms from extracted]:\n', extracted_terms[0])
         break
