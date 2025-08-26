@@ -21,9 +21,9 @@ class GameTermGenDataset(Dataset):
 
         if is_generation_eval:
             # For text generation evaluation (Generation Quality)
-            requests = tokenizer.apply_term_extraction_template(cn) # create prompts without assistant content
+            requests = tokenizer.apply_term_extraction_template(cn)
             self.inputs = tokenizer(requests, add_special_tokens=False)
-            self.terms = [set(json.loads(t)) for t in terms]
+            self.labels = tokenizer(terms, add_special_tokens=False).input_ids
         else:
             # For Teacher-Forcing training
             requests, responses = tokenizer.apply_term_extraction_template(cn, terms)
@@ -37,53 +37,22 @@ class GameTermGenDataset(Dataset):
                 self.inputs.attention_mask[i].extend(targets.attention_mask[i])
 
     def __getitem__(self, index:int) -> DSOutput:
-        if self.is_generation_eval:
-            return dict(
-                input_ids=self.inputs.input_ids[index],
-                attention_mask=self.inputs.attention_mask[index],
-                terms=self.terms[index],
-            ) 
-        else:
-            return dict(
-                input_ids=self.inputs.input_ids[index],
-                attention_mask=self.inputs.attention_mask[index],
-                labels=self.labels[index],
-            )
+        return dict(
+            input_ids=self.inputs.input_ids[index],
+            attention_mask=self.inputs.attention_mask[index],
+            labels=self.labels[index],
+        )
     
     def __len__(self) -> int:
         return len(self.dataframe)
 
-class GameTermGenDataCollator(DataCollatorForSeq2Seq):
-    '''
-        The DataCollatorWithPadding class only deals with input_ids and attention_mask correctly, 
-        while labels have different padding rules: the pad token id should be the IGNORE_INDEX, which is -100. 
-        Therefore, we need to inherit from the DataCollatorForSeq2Seq class which can pad the labels correctly.
-    '''
-    def __call__(self, features:List[DSOutput]):
-        is_generation_eval = "terms" in features[0]
-
-        if is_generation_eval:
-            # left padding for evaluation
-            self.tokenizer.padding_side = 'left'
-            terms = [ f.pop("terms") for f in features ]
-            batch = super().__call__(features)
-            batch['terms'] = terms
-            self.tokenizer.padding_side = 'right'
-            
-        else:
-            # right padding for training
-            self.tokenizer.padding_side = 'right'
-            batch = super().__call__(features)
-
-        return batch
-    
 if __name__ == "__main__":
     MODEL_PATH = get_model_local_path(ModelID.QWEN3)
     TRAIN_SHEET_PATH = PATH_DATA/'term_extraction_train.xlsx'
     EVAL_SHEET_PATH = PATH_DATA/'term_extraction_test.xlsx'
 
     tokenizer:QwenGameTermTokenizer = QwenGameTermTokenizer.from_pretrained(MODEL_PATH)
-    data_collator = GameTermGenDataCollator(tokenizer=tokenizer, padding=True, return_tensors='pt')
+    data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer, padding=True, return_tensors='pt')
 
     print("====================== Test GameTermGenDataset =======================")
     sheet = Sheet(TRAIN_SHEET_PATH)
@@ -104,11 +73,11 @@ if __name__ == "__main__":
 
     print("\n\n====================== Test Eval =======================")
     sheet = Sheet(EVAL_SHEET_PATH)
+    tokenizer.padding_side = 'left'
     eval_ds = GameTermGenDataset(tokenizer, sheet, is_generation_eval=True)
     model:Qwen3ForCausalLM = Qwen3ForCausalLM.from_pretrained(MODEL_PATH)
 
     for batch in DataLoader(eval_ds, batch_size=3, shuffle=True, collate_fn=data_collator):
-        batch_terms = batch.pop("terms")
         output_texts = model.generate(**batch)
 
         input_text = tokenizer.batch_decode(batch["input_ids"])
@@ -117,6 +86,8 @@ if __name__ == "__main__":
         output_text = tokenizer.batch_decode(output_texts)
         print('\n[Output Text For Generation Eval]:\n', output_text[0])
 
+        batch["labels"][batch["labels"] == -100] = tokenizer.pad_token_id
+        batch_terms = tokenizer.get_terms_from_output(tokenizer.batch_decode(batch["labels"]))
         extracted_terms = tokenizer.get_terms_from_output(output_text)
         print('\n[Terms from labels]:\n', batch_terms[0])
         print('\n[Terms from extracted]:\n', extracted_terms[0])
