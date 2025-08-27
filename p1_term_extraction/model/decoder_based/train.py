@@ -53,7 +53,7 @@ def train_decoder() -> Seq2SeqTrainer:
     print(f"ds_train len: {len(ds_train)}")
 
     sheet_test = Sheet(TEST_SHEET_PATH)
-    ds_test = GameTermGenDataset(tokenizer, sheet_test, is_generation_eval=True, start=100, end=180)
+    ds_test = GameTermGenDataset(tokenizer, sheet_test, is_generation_eval=True)
     print(f"ds_test len: {len(ds_test)}")
 
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -69,8 +69,8 @@ def train_decoder() -> Seq2SeqTrainer:
         eval_accumulation_steps=1,   # [Important] To prevent gathering all predictions of the entire test set at once and making a single compute_metrics call. 
         save_strategy='best',
         save_total_limit=3,
-        # metric_for_best_model="rouge-l",   # Return from compute_metrics()
-        metric_for_best_model="f1",   # Return from compute_metrics()
+        metric_for_best_model="rouge-l",   # Return from compute_metrics()
+        # metric_for_best_model="f1",   # Return from compute_metrics()
         greater_is_better=True,       # F1 is greater better
         load_best_model_at_end=True,
         label_names=["labels"],
