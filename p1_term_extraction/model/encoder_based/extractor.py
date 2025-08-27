@@ -43,7 +43,7 @@ if __name__ == "__main__":
     sheet_test = Sheet(TEST_SHEET_PATH)
     extractor = EncoderBasedTermExtractor()
 
-    for i in range(222, 242):
+    for i in range(222, 242+1):
         print("-"*20)
         text = sheet_test[i, "CN"]
         print("Text:", text)
