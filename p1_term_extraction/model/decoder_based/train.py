@@ -106,7 +106,7 @@ def train_decoder() -> Seq2SeqTrainer:
         if key.startswith("eval_"):
             print(f"{key}: {score:.4f}")
 
-    BEST_MODEL_PATH = str(SAVE_PATH / 'best')
+    BEST_MODEL_PATH = str(SAVE_PATH)
     trainer.model.save_pretrained(BEST_MODEL_PATH)
     gen_config.save_pretrained(BEST_MODEL_PATH)
     print(f"Best model saved to: {BEST_MODEL_PATH}")

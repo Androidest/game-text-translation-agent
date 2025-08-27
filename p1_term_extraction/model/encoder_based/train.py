@@ -49,9 +49,9 @@ class MetricsForGameTermBILabels:
         f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
 
         return {
-            "precision":precision,
-            "recall":recall,
-            "f1":f1,
+            "precision":precision * 100,
+            "recall":recall * 100,
+            "f1":f1 * 100,
         }
 
 def train_encoder() -> Trainer:
@@ -109,7 +109,7 @@ def train_encoder() -> Trainer:
         if key.startswith("eval_"):
             print(f"{key}: {score:.4f}")
 
-    BEST_MODEL_PATH = str(SAVE_PATH / 'best')
+    BEST_MODEL_PATH = str(SAVE_PATH)
     trainer.model.save_pretrained(BEST_MODEL_PATH)
     tokenizer.save_pretrained(BEST_MODEL_PATH)
     print(f"Best model saved to: {BEST_MODEL_PATH}")
