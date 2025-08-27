@@ -26,6 +26,10 @@ class TermMetrics:
         for metric_name in self.metrics:
             compute_metrics = self.__getattribute__(metric_name)
             results.update(compute_metrics(pred_text, true_text))
+
+        if "term_set" in self.metrics and "rouge" in self.metrics:
+            results["rouge-l_recall"] = 0.3 * results["rouge-l"] + 0.7 * results["recall"]
+
         return results
 
     def term_set(self, pred_text:List[str], true_text:List[str]) -> Dict[str, float]:

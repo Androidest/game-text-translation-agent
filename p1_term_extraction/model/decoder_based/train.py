@@ -65,18 +65,18 @@ def train_decoder() -> Seq2SeqTrainer:
 
         predict_with_generate=True,
         eval_strategy=IntervalStrategy.STEPS,
-        eval_steps=10,
+        eval_steps=50,
         eval_accumulation_steps=1,   # [Important] To prevent gathering all predictions of the entire test set at once and making a single compute_metrics call. 
         save_strategy='best',
         save_total_limit=3,
-        metric_for_best_model="rouge-l",   # Return from compute_metrics()
+        metric_for_best_model="rouge-l_recall",   # Return from compute_metrics()
         # metric_for_best_model="f1",   # Return from compute_metrics()
         greater_is_better=True,       # F1 is greater better
         load_best_model_at_end=True,
         label_names=["labels"],
         
         num_train_epochs=1,
-        gradient_accumulation_steps=1,
+        gradient_accumulation_steps=8,
         per_device_train_batch_size=2,
         per_device_eval_batch_size=8,
         optim="adamw_torch",

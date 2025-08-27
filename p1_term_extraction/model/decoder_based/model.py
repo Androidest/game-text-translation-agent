@@ -120,8 +120,8 @@ class QwenGameTermLoraModel(PeftModelForCausalLM):
         if peft_config is None:
             peft_config = LoraConfig(
                 r=8, # rank
-                lora_alpha=8, # controls the multiplier α/r in ΔW=r/α*​AB
-                lora_dropout=0.05,
+                lora_alpha=4, # controls the multiplier α/r in ΔW=r/α*​AB
+                lora_dropout=0.07,
                 bias="none",
                 target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
                 inference_mode=False,
