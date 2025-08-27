@@ -38,6 +38,9 @@ target:
 """
 
 class QwenGameTermTokenizer(Qwen2TokenizerFast):
+    STRUCTURED_OUTPUT_PREFIX = '["'
+    IGNORE_INDEX = -100
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -79,7 +82,7 @@ class QwenGameTermTokenizer(Qwen2TokenizerFast):
             if has_target:
                 responses.append(target_text[i] + '<|im_end|>')
             else:
-                prompts += '["'
+                prompts += self.STRUCTURED_OUTPUT_PREFIX
 
             requests.append(prompts)
 
@@ -96,7 +99,8 @@ class QwenGameTermTokenizer(Qwen2TokenizerFast):
     def _get_terms_from_output(self, output_text:str, return_list:bool=True):
         start = output_text.find('[')
         if start == -1:
-            return None
+            start = 0
+            output_text = self.STRUCTURED_OUTPUT_PREFIX + output_text
         
         end = output_text.find(']', start)
         if end == -1:
@@ -110,13 +114,13 @@ class QwenGameTermTokenizer(Qwen2TokenizerFast):
             return json.loads(json_list)
         except:
             return None
-
+    
 class QwenGameTermLoraModel(PeftModelForCausalLM):
     def __init__(self, model:torch.nn.Module, peft_config:PeftConfig=None, adapter_name:str='default', **kwargs):
         if peft_config is None:
             peft_config = LoraConfig(
-                r=16, # rank
-                lora_alpha=16, # controls the multiplier α/r in ΔW=r/α*​AB
+                r=8, # rank
+                lora_alpha=8, # controls the multiplier α/r in ΔW=r/α*​AB
                 lora_dropout=0.05,
                 bias="none",
                 target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],

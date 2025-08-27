@@ -1,5 +1,6 @@
 # python=3.12.9
 jieba==0.42.1
+rouge-chinese==1.0.3
 keyboard==0.13.5
 langchain-community==0.3.27
 langgraph==0.5.3
