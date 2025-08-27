@@ -4,7 +4,6 @@ from .dataset import GameTermNERDataset
 from utils import *
 from typing import *
 import numpy as np
-import pdb
 import datetime
 
 MODEL_ID = ModelID.MACBERT_BASE
@@ -81,7 +80,7 @@ def train_encoder() -> Trainer:
         greater_is_better=True,       # F1 is greater better
         load_best_model_at_end=True,
         
-        num_train_epochs=5,
+        num_train_epochs=1,
         per_device_train_batch_size=64,
         per_device_eval_batch_size=256,
         optim="adamw_torch",
