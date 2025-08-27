@@ -19,8 +19,8 @@ from utils import *
 from typing import *
 import datetime
 
-BASE_MODEL_ID = ModelID.QWEN3
-LORA_MODEL_ID = ModelID.QWEN3_LORA
+BASE_MODEL_ID = ModelID.QWEN2_5
+LORA_MODEL_ID = ModelID.QWEN2_5_LORA
 LOG_PATH = PATH_PROJECT_ROOT / "p1_term_extraction" / "model" / "logs" / "decoder-based"
 SAVE_PATH = get_model_local_path(LORA_MODEL_ID, ModelSrc.LOCAL)
 TRAIN_SHEET_PATH = PATH_DATA/'term_extraction_train.xlsx'
@@ -75,13 +75,13 @@ def train_decoder() -> Seq2SeqTrainer:
         load_best_model_at_end=True,
         label_names=["labels"],
         
-        num_train_epochs=1,
-        gradient_accumulation_steps=8,
-        per_device_train_batch_size=2,
-        per_device_eval_batch_size=8,
+        num_train_epochs=2,
+        gradient_accumulation_steps=1,
+        per_device_train_batch_size=16,
+        per_device_eval_batch_size=128,
         optim="adamw_torch",
-        weight_decay=1e-4,
-        learning_rate=1e-4,
+        weight_decay=1e-3,
+        learning_rate=8e-5,
         warmup_ratio=0.1,
         lr_scheduler_type=SchedulerType.COSINE,
     )

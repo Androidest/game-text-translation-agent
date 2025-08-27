@@ -42,7 +42,7 @@ class DecoderBasedTermExtractor:
 
         gen_config = self.model.generation_config
         gen_config.max_new_tokens = 1024
-        gen_config.temperature = 0.001
+        gen_config.temperature = 0.1
         gen_config.top_p = 0.1
         gen_config.repetition_penalty = 1.0
 
@@ -68,24 +68,36 @@ class DecoderBasedTermExtractor:
         return terms
 
 if __name__ == "__main__":
+    import json
     TEST_SHEET_PATH = PATH_DATA / 'term_extraction_test.xlsx'
 
     sheet_test = Sheet(TEST_SHEET_PATH)
     extractor = DecoderBasedTermExtractor(
         base_model_id=ModelID.QWEN3,
         lora_model_id=ModelID.QWEN3_LORA,
-        lora_scr=ModelSrc.LOCAL,
+        # lora_scr=ModelSrc.LOCAL,
         device='cpu'
     )
 
-    start = 222
-    end = 242
-    original_terms_list = list(sheet_test[start:end, "TERMS"])
-    text_list = list(sheet_test[start:end, "CN"])
-    terms_list = extractor.extract(text_list)
+    batch_size = 4
+    show_new_terms = True
+    for start in range(0, len(sheet_test), batch_size):
+        end = start + batch_size
+        original_terms_list = list(sheet_test[start:end, "TERMS"])
+        text_list = list(sheet_test[start:end, "CN"])
+        terms_list = extractor.extract(text_list)
+        for text, terms, oterms in zip(text_list, terms_list, original_terms_list):
+            if show_new_terms:
+                if terms == None:
+                    continue
 
-    for text, terms, oterms in zip(text_list, terms_list, original_terms_list):
-        print("-"*20)
-        print("Text:", text)
-        print("Original terms:", oterms)
-        print("Extracted terms:", terms)
+                new_terms = set(terms) - set(json.loads(oterms))
+                if len(new_terms) == 0:
+                    continue
+
+            print("Text:", text)
+            print("Original terms:", oterms)
+            print("Extracted terms:", terms)
+            if show_new_terms:
+                print("-- New terms:", new_terms)
+            print("-"*20)

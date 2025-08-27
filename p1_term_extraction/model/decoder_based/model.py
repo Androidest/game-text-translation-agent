@@ -119,9 +119,9 @@ class QwenGameTermLoraModel(PeftModelForCausalLM):
     def __init__(self, model:torch.nn.Module, peft_config:PeftConfig=None, adapter_name:str='default', **kwargs):
         if peft_config is None:
             peft_config = LoraConfig(
-                r=8, # rank
+                r=4, # rank
                 lora_alpha=4, # controls the multiplier α/r in ΔW=r/α*​AB
-                lora_dropout=0.07,
+                lora_dropout=0.05,
                 bias="none",
                 target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
                 inference_mode=False,
