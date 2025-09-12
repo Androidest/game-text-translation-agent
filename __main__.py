@@ -1,20 +1,29 @@
 import os
-from utils import default_llm, get_llm
+from utils import default_llm, get_llm, llm_names
 from argparse import ArgumentParser
 from translation_agent import translate
 
+# parse args
 parser = ArgumentParser()
 parser.add_argument("--llm", type=str, help='choose an llm', default="")
 args = parser.parse_args()
-
 model = get_llm(args.llm)
-if model is None:
-    model = default_llm
 
+# Select a model when --llm is not given
 if model is None:
-    raise ValueError(f'llm={args.llm} not supported')
+    while True:
+        print("Supported AI models:")
+        for i, name in enumerate(llm_names):
+            print(f" - {i}. {name}")
+        
+        index = input("Please select a model by number:")
+        try:
+            model = get_llm(llm_names[int(index)])
+            break
+        except:
+            print("Wrong input!")
+
 print(f"Using model: {model.model_name}")
-
 
 def is_excel_file(file_path):
     excel_extensions = ('.xlsx', '.xls', '.xlsm', '.xlsb', '.xltx', '.xltm')

@@ -35,4 +35,5 @@ def get_llm(name:str) -> ChatOpenAI:
 
 _llms = init_llms()
 if len(_llms) > 0:
-    _, default_llm = list(_llms.items())[0]
+    llm_names = list(_llms.keys())
+    default_llm = list(_llms.values())[0]
