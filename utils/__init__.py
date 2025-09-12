@@ -1,6 +1,6 @@
 from .sheet import Sheet
 from .structured_validating_agent import StructuredValidatingState, create_structured_validating_agent, display_graph
-from .llms import deepseek
+from .llms import default_llm, get_llm
 from .key_strokle_listener import KeyStrokeListener
 from .parallel_sheet_chunking import ParallelSheetChunksIterator, ParallelSheetChunkDispatcher
 from .path import PATH_PROJECT_ROOT, PATH_DATA, PATH_MODELS, ModelSrc, ModelID, get_model_local_path
@@ -11,7 +11,8 @@ __all__ = [
     "StructuredValidatingState",
     "create_structured_validating_agent",
     "display_graph",
-    "deepseek",
+    "default_llm",
+    "get_llm",
     "KeyStrokeListener",
     "ParallelSheetChunksIterator",
     "ParallelSheetChunkDispatcher",

@@ -39,7 +39,7 @@ class TermAlignmentChunkDispatcher(ParallelSheetChunkDispatcher):
 
 if __name__ == "__main__":
     agent = create_term_aligment_agent(
-        model=deepseek, 
+        model=default_llm, 
         max_attempts=5
     )
     input_sheet = Sheet(

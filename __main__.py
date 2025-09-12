@@ -1,5 +1,20 @@
-from translation_agent import translate
 import os
+from utils import default_llm, get_llm
+from argparse import ArgumentParser
+from translation_agent import translate
+
+parser = ArgumentParser()
+parser.add_argument("--llm", type=str, help='choose an llm', default="")
+args = parser.parse_args()
+
+model = get_llm(args.llm)
+if model is None:
+    model = default_llm
+
+if model is None:
+    raise ValueError(f'llm={args.llm} not supported')
+print(f"Using model: {model.model_name}")
+
 
 def is_excel_file(file_path):
     excel_extensions = ('.xlsx', '.xls', '.xlsm', '.xlsb', '.xltx', '.xltm')
@@ -24,5 +39,5 @@ while True:
     else:
         print(f"You want to translate the file: {file_path}")
 
-    translate(file_path, on_update=on_update)
+    translate(model, file_path, on_update=on_update)
     print(f"Translation is complete! File has been saved to: {file_path}\n\n")

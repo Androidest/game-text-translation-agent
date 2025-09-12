@@ -57,7 +57,7 @@ if __name__ == "__main__":
     import json
 
     agent = create_term_extraction_agent(
-        model=deepseek,
+        model=default_llm,
         max_attempts=1,
     )
 

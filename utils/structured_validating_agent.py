@@ -126,7 +126,7 @@ def display_graph(graph:StateGraph):
 
 # Test
 if __name__ == "__main__":
-    from llms import deepseek
+    from llms import default_llm
     import asyncio
     import time
 
@@ -152,7 +152,7 @@ if __name__ == "__main__":
         )
 
     agent = create_structured_validating_agent(
-        model=deepseek,
+        model=default_llm,
         sys_prompt="You are a helpful personal info extractor, extract a person's name and age from the input text.",
         fix_error_prompt="Fix the error:{error}",
         output_schema=PersonInfoSchema,

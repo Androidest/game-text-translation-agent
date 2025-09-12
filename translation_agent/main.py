@@ -5,6 +5,7 @@ import json
 from p3_term_retrieval import TermRetriever
 from pathlib import Path
 from p4_RAG import RAG
+from langchain_openai import ChatOpenAI
 
 class TermExtractorChunkDispatcher(ParallelSheetChunkDispatcher):
     use_rag = True
@@ -73,12 +74,12 @@ class TermExtractorChunkDispatcher(ParallelSheetChunkDispatcher):
             values.append({ "CN": cn, "ES": es, "TERMS": terms, "RAG": rag_text })
         return values
 
-def translate(data_path:str, on_update:callable = None):
+def translate(model:ChatOpenAI, data_path:str, on_update:callable = None):
     INPUT_PATH = Path(data_path)
     OUTPUT_PATH = INPUT_PATH.parent / INPUT_PATH.name.replace(".xlsx", ".translated.xlsx")
 
     agent = create_translation_agent(
-        model=deepseek, 
+        model=model, 
         max_attempts=5
     )
     input_sheet = Sheet(
@@ -101,4 +102,4 @@ def translate(data_path:str, on_update:callable = None):
     return output_sheet
 
 if __name__ == "__main__":
-    translate(PATH_DATA / "test.xlsx", on_update=lambda dispatcher: print("Updating"))
+    translate(default_llm, PATH_DATA / "test.xlsx", on_update=lambda dispatcher: print("Updating"))

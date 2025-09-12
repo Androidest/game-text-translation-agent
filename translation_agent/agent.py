@@ -1,6 +1,6 @@
 #%%
 from translation_agent.promtps import *
-from utils import StructuredValidatingState, create_structured_validating_agent, deepseek
+from utils import StructuredValidatingState, create_structured_validating_agent, default_llm
 from pydantic import BaseModel, Field
 from typing import Dict, List, Optional
 import numpy as np
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     from langchain_community.callbacks.manager import get_openai_callback
 
     agent = create_translation_agent(
-        model=deepseek,
+        model=default_llm,
         max_attempts=1,
     )
 
