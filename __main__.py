@@ -1,7 +1,6 @@
 import os
 from utils import default_llm, get_llm, llm_names
 from argparse import ArgumentParser
-from translation_agent import translate
 
 # parse args
 parser = ArgumentParser()
@@ -48,5 +47,6 @@ while True:
     else:
         print(f"You want to translate the file: {file_path}")
 
+    from translation_agent import translate
     translate(model, file_path, on_update=on_update)
     print(f"Translation is complete! File has been saved to: {file_path}\n\n")
