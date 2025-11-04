@@ -28,6 +28,9 @@ class RAG:
         self.model = TextEmbModel(device=device)
         print(f"Model loaded on device:{self.model.device}")
 
+        self.index_path = index_path
+        self.text_sheet_path = text_sheet_path
+
     def retrieve_sim(self, text: Union[str, List[str]]) -> Tuple[np.ndarray[np.ndarray[str]], np.ndarray[float]]:
         emb = self.model.get_text_emb(text)
         faiss.normalize_L2(emb) # for cosine similarity

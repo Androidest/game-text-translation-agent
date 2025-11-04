@@ -6,15 +6,34 @@ from p3_term_retrieval import TermRetriever
 from pathlib import Path
 from p4_RAG import RAG
 from langchain_openai import ChatOpenAI
+from langgraph.graph import StateGraph
 
-class TermExtractorChunkDispatcher(ParallelSheetChunkDispatcher):
+class RAGChunkDispatcher(ParallelSheetChunkDispatcher):
     use_rag = True
     RAG_MIN_COSINE_SIMILARITY = 0.97
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.term_retriever = TermRetriever()
-        self.rag = RAG()
+    def __init__(self, 
+            chunk_size:int, 
+            parallel_chunks:int,
+            input_sheet:Sheet,
+            output_sheet:Sheet,
+            agent:StateGraph,
+            desc:str="",
+            exit_hot_key:str="esc",
+            rag:RAG=None,
+            term_retriever:TermRetriever=None,
+        ):
+        super().__init__(
+            chunk_size=chunk_size, 
+            parallel_chunks=parallel_chunks,
+            input_sheet=input_sheet,
+            output_sheet=output_sheet,
+            agent=agent,
+            desc=desc,
+            exit_hot_key=exit_hot_key,
+        )
+        self.term_retriever = term_retriever if term_retriever is not None else TermRetriever()
+        self.rag = rag if rag is not None else RAG()
         self.first_col = self.input_sheet.column_names()[0]
 
     def input_chunk_to_agent(self, chunk_index:tuple) -> StructuredValidatingState:
@@ -23,7 +42,7 @@ class TermExtractorChunkDispatcher(ParallelSheetChunkDispatcher):
         cn_dict = {}
         term_dict = {}
         for i, r in enumerate(range(start, end)):
-            cn = self.input_sheet[r, self.first_col]
+            cn = str(self.input_sheet[r, self.first_col])
             terms = self.term_retriever.retrieve(cn)
             cn_dict[f"{i}"] = cn
             term_dict.update(terms)
@@ -60,7 +79,7 @@ class TermExtractorChunkDispatcher(ParallelSheetChunkDispatcher):
         for i in range(start, end):
             index = i - start
             index_key = f"{index}"
-            if self.input_sheet[i, self.first_col] != cn_dict[index_key]:
+            if self.input_sheet[i, self.first_col] != cn_dict[index_key] and cn_dict[index_key] != 'nan':
                 raise ValueError(f"CN not match: {self.input_sheet[i, self.first_col]} != {cn_dict[index_key]}")
 
             cn = cn_dict[index_key]
@@ -90,7 +109,7 @@ def translate(model:ChatOpenAI, data_path:str, on_update:callable = None):
         conlumns=["CN", "ES", "TERMS", "RAG"],
         clear=False
     )
-    dispatcher = TermExtractorChunkDispatcher(
+    dispatcher = RAGChunkDispatcher(
         chunk_size=5,
         parallel_chunks=10,
         input_sheet=input_sheet,

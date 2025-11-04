@@ -1,3 +1,3 @@
-from .main import translate, TermExtractorChunkDispatcher
+from .main import translate, RAGChunkDispatcher
 
-__all__ = ["translate", "TermExtractorChunkDispatcher"]
+__all__ = ["translate", "RAGChunkDispatcher"]

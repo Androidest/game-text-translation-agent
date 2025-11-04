@@ -212,3 +212,7 @@ data.zip
 */**/logs
 */**/checkpoint*
 saved_models/*
+[Tt]emp
+data_temp
+data_rag/*
+data_terms/*

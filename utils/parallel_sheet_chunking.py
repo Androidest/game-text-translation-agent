@@ -15,18 +15,18 @@ class ParallelSheetChunksIterator:
         self.max_lines = max_lines
         self.chunk_size = chunk_size
         self.chunks = chunks
-        self.ongoing_chunks = set()
+        self.ongoing_chunks = []
 
         i = 0
         proccessed_lines = len(sheet)
         while i < len(sheet):
-            if sheet[i].isnull().all(axis=0):
+            if self.check_row_empty(i):
                 j = i + 1
                 b_end = min(i + chunk_size, len(sheet))
-                while j < b_end and sheet[j].isnull().all(axis=0):
+                while j < b_end and self.check_row_empty(j):
                     j += 1
                 
-                self.ongoing_chunks.add((i, j))
+                self.ongoing_chunks.append((i, j))
                 proccessed_lines -= j - i
                 i = j
             else:
@@ -37,23 +37,29 @@ class ParallelSheetChunksIterator:
             initial=proccessed_lines,
             desc=desc
         )
+
+    def check_row_empty(self, i:int):
+        return self.sheet[i].isnull().all(axis=0) \
+            or self.sheet[i, "ES"] == ""\
+            or str(self.sheet[i, "ES"]) == 'nan'\
+            or not self.sheet[i, "ES"]
     
     def get_ongoing_chunks(self):
-        remaining = self.chunks - len(self.ongoing_chunks) 
-        if remaining > 0:
-            start = len(self.sheet)
-            end = min(start + remaining*self.chunk_size, self.max_lines)
-            if end == start:
-                return list(self.ongoing_chunks)
+        # remaining = self.chunks - len(self.ongoing_chunks) 
+        # if remaining > 0:
+        #     start = len(self.sheet)
+        #     end = min(start + remaining*self.chunk_size, self.max_lines)
+        #     if end == start:
+        #         return list(self.ongoing_chunks)
 
-            indexes = list(range(start, end, self.chunk_size)) + [end]
-            l = indexes[:-1]
-            r = indexes[1:]
-            new_chunks = [ (i,j) for i, j in zip(l, r) ]
-            self.ongoing_chunks.update(new_chunks)
+        #     indexes = list(range(start, end, self.chunk_size)) + [end]
+        #     l = indexes[:-1]
+        #     r = indexes[1:]
+        #     new_chunks = [ (i,j) for i, j in zip(l, r) ]
+        #     self.ongoing_chunks.update(new_chunks)
 
-            for i in range(start, end):
-                self.sheet[i] = None
+        #     for i in range(start, end):
+        #         self.sheet[i] = {"CN": self.sheet[i, "CN"], "ES": "", "TERMS": "", "RAG": ""}
 
         return list(self.ongoing_chunks)[:self.chunks]
 
@@ -93,6 +99,14 @@ class ParallelSheetChunkDispatcher:
         self.key_checker = KeyStrokeListener()
         self.key_checker.add_hotkey(exit_hot_key)
         self.exit_hot_key = exit_hot_key
+        self._is_running = False
+
+    @property
+    def is_running(self):
+        return self._is_running
+
+    def stop(self):
+        self._is_running = False
 
     async def async_process_chunk(self, chunk_index:tuple) -> tuple[StructuredValidatingState, str]:
         
@@ -113,7 +127,7 @@ class ParallelSheetChunkDispatcher:
         tasks = [self.async_process_chunk(chunk_index) for chunk_index in chunk_list]
         return await asyncio.gather(*tasks)
 
-    def run(self, on_update:callable = None):
+    async def async_run(self, on_update:callable = None):
         start = len(self.output_sheet)
         max_lines = len(self.input_sheet)
         self.total_cached_tokens = 0
@@ -121,6 +135,7 @@ class ParallelSheetChunkDispatcher:
         self.total_output_tokens = 0
         self.total_attempts = 0
         chunks_iterator = ParallelSheetChunksIterator(self.output_sheet, max_lines, self.chunk_size, self.parallel_chunks, desc=self.desc)
+        self._is_running = True
         
         for chunk_list in chunks_iterator:
             print('#'*100)
@@ -129,7 +144,7 @@ class ParallelSheetChunkDispatcher:
 
             with get_openai_callback() as cb:
                 # process chunks in parallel
-                results = asyncio.run(self.async_process_multiple_chunks(chunk_list))
+                results = await self.async_process_multiple_chunks(chunk_list)
                 # process chunks results
                 for (start, end), (state, logs) in zip(chunk_list, results):
                     print(f"========== Chunk ({start} - {end}) starts ==========")
@@ -173,7 +188,21 @@ class ParallelSheetChunkDispatcher:
 
             if self.is_pressed_exit():
                 print(f"Exit hotkeys was pressed. Exiting...")
+                self._is_running = False
+            
+            if not self._is_running:
                 break
+
+            yield chunks_iterator.progress.n / chunks_iterator.progress.total
+
+        self._is_running = False
+        yield 1
+
+    def run(self, on_update:callable = None):
+        async def run():
+            async for progress in self.async_run(on_update):
+                pass
+        asyncio.run(run())
 
     def is_pressed_exit(self):
         return self.key_checker.has_key_pressed(f"{self.exit_hot_key}")

@@ -3,6 +3,7 @@ import pandas as pd
 from pandas._typing import Axes, Dtype
 import os
 import numpy as np
+from pathlib import Path
 
 class Sheet:
     def __init__(self, 
@@ -61,9 +62,9 @@ class Sheet:
         return list(self.dataframe.columns)
     
     def save(self, index:bool=False):
-        dirname = os.path.dirname(os.path.abspath(self.excel_file_path))
-        if not os.path.exists(dirname):
-            os.mkdir(dirname)
+        dirname = Path(self.excel_file_path).parent
+        if not dirname.exists():
+            dirname.mkdir(parents=True)
         self.dataframe.to_excel(self.excel_file_path, sheet_name=self.sheet_name, index=index)
 
 if __name__ == "__main__":

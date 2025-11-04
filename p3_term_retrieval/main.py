@@ -10,8 +10,12 @@ class TermRetriever(TokenizerBasedTermExtractor):
 
     def __init__(self, term_alignment_path=TERM_ALIGNMENT_PATH):
         super().__init__(term_alignment_path)
+        self.terms_path = term_alignment_path
             
     def retrieve(self, text):
+        if not text or not isinstance(text, str):
+            return {}
+        
         terms = {}
         for word in self.tokenizer.cut(text):
             if word not in terms \

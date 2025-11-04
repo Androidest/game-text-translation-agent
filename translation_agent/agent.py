@@ -3,9 +3,7 @@ from translation_agent.promtps import *
 from utils import StructuredValidatingState, create_structured_validating_agent, default_llm
 from pydantic import BaseModel, Field
 from typing import Dict, List, Optional
-import numpy as np
 import json
-import pdb
 
 class TranslationInputSchema(BaseModel):
     rag_translations: Optional[List[List[str]]] = Field(description="参考类似过往翻译（RAG检索结果）")
