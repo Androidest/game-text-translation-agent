@@ -2,11 +2,6 @@ import gradio as gr
 import pandas as pd
 from pathlib import Path
 from utils import *
-from translation_agent.agent import create_translation_agent
-from translation_agent import RAGChunkDispatcher
-from p3_term_retrieval import TermRetriever
-from p4_RAG import RAG
-import pdb 
 
 PATH_TEMP = PATH_PROJECT_ROOT/'data_temp'
 PATH_TERMS = PATH_PROJECT_ROOT/'data_terms' 
@@ -84,6 +79,11 @@ def on_change_sheet(sheet:Sheet, dataframe:pd.DataFrame):
     print(f"已保存：{sheet.excel_file_path}")
 
 def refresh_chunked_agent(chunked_agent, llm:str, rag_filename:str, terms_filename:str, sheet:Sheet):
+    from translation_agent.agent import create_translation_agent
+    from translation_agent import RAGChunkDispatcher
+    from p3_term_retrieval import TermRetriever
+    from p4_RAG import RAG
+
     index_path = PATH_RAG/f"{rag_filename}.index"
     text_sheet_path = PATH_RAG/f"{rag_filename}.xlsx"
     terms_path = PATH_TERMS/f"{terms_filename}.xlsx"
@@ -157,7 +157,7 @@ def on_stop_translate(chunked_agent):
         return gr.Button("正在停止...")
     return gr.Button("停止翻译")
 
-with gr.Blocks(title="Stephen 游戏文本翻译器") as demo:
+with gr.Blocks(fill_height=True) as demo:
     # region UI Components
     with gr.Row():
         gr.Markdown("# Stephen 游戏文本翻译器")
@@ -248,4 +248,4 @@ with gr.Blocks(title="Stephen 游戏文本翻译器") as demo:
     # endregion Event Handlers
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(server_name="0.0.0.0", server_port=7860, inbrowser=True)
