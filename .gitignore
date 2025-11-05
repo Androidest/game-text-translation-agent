@@ -215,5 +215,8 @@ saved_models/*
 [Tt]emp
 data_temp
 data_rag/*
+!data_rag/put rag files here
+!data_rag/
 data_terms/*
-!data_terms/put_rag_files
+!data_terms/put term files here
+!data_terms/
