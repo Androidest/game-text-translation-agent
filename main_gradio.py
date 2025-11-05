@@ -43,6 +43,16 @@ def scan_terms_files() -> list[str]:
     terms_files = sorted(list(names))
     return terms_files
 
+def on_refresh():
+    llms = list(init_llms().keys())
+    rag_files = scan_rag_files()
+    terms_files = scan_terms_files()
+    return (
+        gr.Dropdown(choices=llms, value=llms[0] if len(llms) > 0 else None),
+        gr.Dropdown(choices=rag_files, value=rag_files[0] if len(rag_files) > 0 else None),
+        gr.Dropdown(choices=terms_files, value=terms_files[0] if len(terms_files) > 0 else None),
+    )
+
 def on_load_sheet(file):
     if file is None:
         return pd.DataFrame()
@@ -95,7 +105,7 @@ def refresh_chunked_agent(chunked_agent, llm:str, rag_filename:str, terms_filena
     term_retriever = TermRetriever(term_alignment_path=terms_path)
     chunked_agent = RAGChunkDispatcher(
         chunk_size=4,
-        parallel_chunks=20,
+        parallel_chunks=10,
         input_sheet=sheet,
         output_sheet=sheet,
         agent=agent,
@@ -111,13 +121,16 @@ async def on_translate(sheet:Sheet, chunked_agent, llm:str, rag_filename:str, te
         return (
             gr.File(interactive=not running),
             gr.Dataframe(value=sheet.dataframe, static_columns=[0,1,2,3] if running else [0,2,3], interactive=not running),
-            gr.Button(f"翻译中... {progress*100:.2f}%" if running else "开始翻译", variant="secondary" if running else "primary"),
-            gr.Button(visible=running),
+            gr.Button(f"翻译中... {progress*100:.2f}%" if running else "开始翻译", variant="primary" if running else "secondary"),
+            gr.Button("停止翻译", visible=running),
             chunked_agent,
         )
 
     if sheet is None or rag_filename is None or terms_filename is None:
         yield get_on_translate_return()
+
+    if chunked_agent and chunked_agent.is_running:
+        yield get_on_translate_return(progress=0)
 
     # 立即返回锁定状态
     print(f"开始翻译:{sheet.sheet_name}")
@@ -125,6 +138,8 @@ async def on_translate(sheet:Sheet, chunked_agent, llm:str, rag_filename:str, te
     
     try:
         chunked_agent = refresh_chunked_agent(chunked_agent, llm, rag_filename, terms_filename, sheet)
+        yield get_on_translate_return(progress=0)
+
         async for progress in chunked_agent.async_run():
             yield get_on_translate_return(progress=progress)
         
@@ -136,90 +151,99 @@ async def on_translate(sheet:Sheet, chunked_agent, llm:str, rag_filename:str, te
         yield get_on_translate_return()
 
 def on_stop_translate(chunked_agent):
-    if chunked_agent is not None and chunked_agent.is_running:
+    print(f"点击了停止翻译")
+    if chunked_agent is not None:
         chunked_agent.stop()
+        return gr.Button("正在停止...")
+    return gr.Button("停止翻译")
 
 with gr.Blocks(title="Stephen 游戏文本翻译器") as demo:
-        rag_names = scan_rag_files()
-        terms_names = scan_terms_files()
-
-        # region UI Components
+    # region UI Components
+    with gr.Row():
         gr.Markdown("# Stephen 游戏文本翻译器")
         with gr.Row():
-            with gr.Column():
-                llm_dropdown = gr.Dropdown(choices=llm_names, label="选择LLM模型", interactive=True)
-            with gr.Column():
-                rag_dropdown = gr.Dropdown(choices=rag_names, label="选择RAG参考文件", interactive=True)
-            with gr.Column():
-                terms_dropdown = gr.Dropdown(choices=terms_names, label="选择术语库文件", interactive=True)
-            with gr.Column():
-                translate_btn = gr.Button("翻译", variant="secondary")
-                stop_btn = gr.Button("停止翻译", variant="stop", visible=False)
-        with gr.Row():
-            file_input = gr.File(label="上传一个Excel文件（必须带'CN'列: 原始中文文本）", file_types=[".xlsx", ".xls"], file_count="single")
-        dataframe_component = gr.Dataframe(
-            label="Excel数据内容 (ES列可编辑)",
-            type="pandas",
-            interactive=True,  # 允许编辑
-            col_count=(2, "fixed"),  # 设置列数，'dynamic'表示自适应。也可以指定固定数字，例如(3, 3)
-            row_count=(0, "dynamic"),
-            wrap=True,
-            show_row_numbers=True,
-            show_search=True,
-            static_columns=[0,2,3],
-            pinned_columns=1,
-            column_widths=["30%", "65%", "30%", "40%"],
-        )
-        # endregion UI Components
+            refresh_btn = gr.Button("🔄刷新配置", variant="secondary", size="sm",min_width=10)
+    
+    rag_names = scan_rag_files()
+    terms_names = scan_terms_files()
+    with gr.Row():
+        llm_dropdown = gr.Dropdown(choices=llm_names, label="选择LLM模型", interactive=True)
+        rag_dropdown = gr.Dropdown(choices=rag_names, label="选择RAG参考文件", interactive=True)
+        terms_dropdown = gr.Dropdown(choices=terms_names, label="选择术语库文件", interactive=True)
+        with gr.Column():
+            translate_btn = gr.Button("翻译", variant="primary")
+            stop_btn = gr.Button("停止翻译", variant="stop", visible=False)
+    with gr.Row():
+        file_input = gr.File(label="上传一个Excel文件（必须带'CN'列: 原始中文文本）", file_types=[".xlsx", ".xls"], file_count="single")
+    dataframe_component = gr.Dataframe(
+        label="Excel数据内容 (ES列可编辑)",
+        type="pandas",
+        interactive=True,  # 允许编辑
+        col_count=(2, "fixed"),  # 设置列数，'dynamic'表示自适应。也可以指定固定数字，例如(3, 3)
+        row_count=(0, "dynamic"),
+        wrap=True,
+        show_row_numbers=True,
+        show_search=True,
+        static_columns=[0,2,3],
+        pinned_columns=1,
+        column_widths=["30%", "65%", "30%", "40%"],
+    )
+    # endregion UI Components
 
-        # region States
-        llm_state = gr.State(value=llm_names[0] if len(llm_names) > 0 else None)
-        rag_filename_state = gr.State(value=rag_names[0] if len(rag_names) > 0 else None)
-        terms_filename_state = gr.State(value=terms_names[0] if len(terms_names) > 0 else None)
-        sheet_state = gr.State(value=None)
-        chunked_agent_state = gr.State(value=None)
-        # endregion States
+    # region States
+    llm_state = gr.State(value=llm_names[0] if len(llm_names) > 0 else None)
+    rag_filename_state = gr.State(value=rag_names[0] if len(rag_names) > 0 else None)
+    terms_filename_state = gr.State(value=terms_names[0] if len(terms_names) > 0 else None)
+    sheet_state = gr.State(value=None)
+    chunked_agent_state = gr.State(value=None)
+    # endregion States
 
-        # region Event Handlers
-        llm_dropdown.change(
-            fn=lambda x: x,
-            inputs=[llm_dropdown],
-            outputs=[llm_state],
-        )
-        
-        rag_dropdown.change(
-            fn=lambda x: x,
-            inputs=[rag_dropdown],
-            outputs=[rag_filename_state],
-        )
-        
-        terms_dropdown.change(
-            fn=lambda x: x,
-            inputs=[terms_dropdown],
-            outputs=[terms_filename_state],
-        )
+    # region Event Handlers
+    refresh_btn.click(
+        fn=on_refresh,
+        outputs=[llm_dropdown, rag_dropdown, terms_dropdown],
+    )
 
-        file_input.change(
-            fn=on_load_sheet, 
-            inputs=[file_input],
-            outputs=[sheet_state, dataframe_component]
-        )
+    llm_dropdown.change(
+        fn=lambda x: x,
+        inputs=[llm_dropdown],
+        outputs=[llm_state],
+    )
+    
+    rag_dropdown.change(
+        fn=lambda x: x,
+        inputs=[rag_dropdown],
+        outputs=[rag_filename_state],
+    )
+    
+    terms_dropdown.change(
+        fn=lambda x: x,
+        inputs=[terms_dropdown],
+        outputs=[terms_filename_state],
+    )
 
-        dataframe_component.change(
-            fn=on_change_sheet,
-            inputs=[sheet_state, dataframe_component],
-        )
-        
-        translate_btn.click(
-            fn=on_translate,
-            inputs=[sheet_state, chunked_agent_state, llm_state, rag_filename_state, terms_filename_state],
-            outputs=[file_input, dataframe_component, translate_btn, stop_btn, chunked_agent_state]
-        )
+    file_input.change(
+        fn=on_load_sheet, 
+        inputs=[file_input],
+        outputs=[sheet_state, dataframe_component]
+    )
 
-        stop_btn.click(
-            fn=on_stop_translate,
-            inputs=[chunked_agent_state]
-        )
+    dataframe_component.change(
+        fn=on_change_sheet,
+        inputs=[sheet_state, dataframe_component],
+    )
+    
+    translate_btn.click(
+        fn=on_translate,
+        inputs=[sheet_state, chunked_agent_state, llm_state, rag_filename_state, terms_filename_state],
+        outputs=[file_input, dataframe_component, translate_btn, stop_btn, chunked_agent_state]
+    )
+
+    stop_btn.click(
+        fn=on_stop_translate,
+        inputs=[chunked_agent_state],
+        outputs=[stop_btn],
+    )
     
     # endregion Event Handlers
 

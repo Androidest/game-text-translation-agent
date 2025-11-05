@@ -136,6 +136,7 @@ class ParallelSheetChunkDispatcher:
         self.total_attempts = 0
         chunks_iterator = ParallelSheetChunksIterator(self.output_sheet, max_lines, self.chunk_size, self.parallel_chunks, desc=self.desc)
         self._is_running = True
+        yield chunks_iterator.progress.n / chunks_iterator.progress.total
         
         for chunk_list in chunks_iterator:
             print('#'*100)
