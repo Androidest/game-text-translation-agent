@@ -1,5 +1,5 @@
 from utils import *
-from .model import GameTermBertTokenizer
+from p1_term_extraction.model.encoder_based.model import GameTermBertTokenizer
 from torch.utils.data import Dataset, DataLoader
 import torch
 import numpy as np

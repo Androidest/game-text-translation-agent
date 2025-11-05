@@ -1,6 +1,6 @@
 from transformers import TrainingArguments, Trainer, IntervalStrategy, SchedulerType, EvalPrediction, TrainerControl, TrainerCallback, TrainerState
-from .model import GameTermBertTokenizer, GameTermBert
-from .dataset import GameTermNERDataset
+from p1_term_extraction.model.encoder_based.model import GameTermBertTokenizer, GameTermBert
+from p1_term_extraction.model.encoder_based.dataset import GameTermNERDataset
 from utils import *
 from typing import *
 import numpy as np

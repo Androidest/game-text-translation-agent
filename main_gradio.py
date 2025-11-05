@@ -2,6 +2,10 @@ import gradio as gr
 import pandas as pd
 from pathlib import Path
 from utils import *
+from translation_agent.agent import create_translation_agent
+from translation_agent import RAGChunkDispatcher
+from p3_term_retrieval import TermRetriever
+from p4_RAG import RAG
 import pdb 
 
 PATH_TEMP = PATH_PROJECT_ROOT/'data_temp'
@@ -70,11 +74,6 @@ def on_change_sheet(sheet:Sheet, dataframe:pd.DataFrame):
     print(f"已保存：{sheet.excel_file_path}")
 
 def refresh_chunked_agent(chunked_agent, llm:str, rag_filename:str, terms_filename:str, sheet:Sheet):
-    from translation_agent.agent import create_translation_agent
-    from translation_agent import RAGChunkDispatcher
-    from p3_term_retrieval import TermRetriever
-    from p4_RAG import RAG
-    
     index_path = PATH_RAG/f"{rag_filename}.index"
     text_sheet_path = PATH_RAG/f"{rag_filename}.xlsx"
     terms_path = PATH_TERMS/f"{terms_filename}.xlsx"

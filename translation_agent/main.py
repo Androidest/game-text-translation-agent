@@ -79,7 +79,7 @@ class RAGChunkDispatcher(ParallelSheetChunkDispatcher):
         for i in range(start, end):
             index = i - start
             index_key = f"{index}"
-            if self.input_sheet[i, self.first_col] != cn_dict[index_key] and cn_dict[index_key] != 'nan':
+            if self.input_sheet[i, self.first_col] != cn_dict[index_key] and cn_dict[index_key] != 'nan' and self.input_sheet[i, self.first_col]:
                 raise ValueError(f"CN not match: {self.input_sheet[i, self.first_col]} != {cn_dict[index_key]}")
 
             cn = cn_dict[index_key]

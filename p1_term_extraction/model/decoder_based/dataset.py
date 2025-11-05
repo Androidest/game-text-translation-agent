@@ -1,6 +1,6 @@
 from utils import *
 from torch.utils.data import Dataset, DataLoader
-from .model import QwenGameTermTokenizer, Qwen3ForCausalLM
+from p1_term_extraction.model.decoder_based.model import QwenGameTermTokenizer, Qwen3ForCausalLM
 import json
 from typing import *
 from transformers.trainer_pt_utils import LabelSmoother
